@@ -1,0 +1,13 @@
+[package]
+name = "movine"
+version = "0.1.0"
+authors = ["Byron Wasti <byron.wasti@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+postgres = "0.15.2"
+chrono = "0.4.6"
+fern = "0.5.7"
+structopt = "0.2.14"
+toml = "0.4.10"
+serde = { version = "1.0.88", features = ["derive"] }
