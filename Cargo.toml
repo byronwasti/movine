@@ -11,3 +11,6 @@ fern = "0.5.7"
 structopt = "0.2.14"
 toml = "0.4.10"
 serde = { version = "1.0.88", features = ["derive"] }
+log = "0.4.6"
+ring = "0.14.6"
+termion = "1.5.1"

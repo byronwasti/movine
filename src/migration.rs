@@ -1,23 +1,10 @@
-pub struct Migration {
-    name: String,
-    up_sql: String,
-    down_sql: String,
-    m_type: MigrationType,
-}
-
-pub enum MigrationType {
-    Up,
-    Down,
-}
-
-impl Migration {
-    pub fn new(name: String, up_sql: String, down_sql: String, m_type: MigrationType) -> Self {
-        Self {
-            m_type,
-            name,
-            up_sql,
-            down_sql,
-        }
-    }
-}
-
+mod base;
+mod db_migration;
+mod local_migration;
+mod migration_plan;
+mod migration_status;
+pub use base::Migration;
+pub use db_migration::DbMigration;
+pub use local_migration::LocalMigration;
+pub use migration_plan::{MigrationOp, MigrationPlan};
+pub use migration_status::MigrationStatus;

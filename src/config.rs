@@ -1,7 +1,7 @@
-use toml;
+use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
-use serde::{Deserialize};
+use toml;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -24,4 +24,3 @@ pub fn load() -> Config {
     let config: Config = toml::from_str(&config_toml).unwrap();
     return config;
 }
-
