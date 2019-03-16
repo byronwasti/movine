@@ -29,6 +29,11 @@ pub fn display_plan(migration_plan: MigrationPlan) {
     let stdout = io::stdout();
     let mut handle = stdout.lock();
 
+    if migration_plan.len() == 0 {
+        writeln!(handle, "Nothing to do.");
+        return;
+    }
+
     for (idx, (op, migration)) in migration_plan.iter().enumerate() {
         writeln!(
             handle,

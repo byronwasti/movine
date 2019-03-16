@@ -136,6 +136,24 @@ fn run(mut local: LocalMigrations, mut db_exec: DBExecutor) -> Result<(), Error>
             Ok(())
         }
 
+        Opt::Fix { show_plan } => {
+            let mut local_migrations = local.load_migrations().unwrap();
+            let mut db_migrations = db_exec.load_migrations().unwrap();
+            let plan_type = PlanType::Fix;
+            let mut plan = PlanBuilder::new()
+                .set_local_migrations(local_migrations)
+                .set_db_migrations(db_migrations)
+                .build(plan_type);
+
+            if show_plan {
+                view::display_plan(plan);
+            } else {
+                db_exec.run_migration_plan(&plan).unwrap();
+            }
+
+            Ok(())
+        }
+
         _ => unimplemented!(),
     }
 }

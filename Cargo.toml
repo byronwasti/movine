@@ -1,8 +1,17 @@
 [package]
 name = "movine"
+license = "MIT"
 version = "0.1.0"
 authors = ["Byron Wasti <byron.wasti@gmail.com>"]
+homepage = "https://github.com/doctor-stopsign/movine"
+repository = "https://github.com/doctor-stopsign/movine"
+description = "A simple database migration manager"
+readme = "README.md"
+travis-ci = { repository = "doctor-stopsign/movine", branch = "master" }
+maintenance = { status = "actively-developed" }
 edition = "2018"
+keywords = ["migration", "database", "cli"]
+categories = ["command-line-utilities", "database"]
 
 [dependencies]
 postgres = "0.15.2"

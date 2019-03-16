@@ -1,6 +1,0 @@
-[connection]
-host = "localhost"
-database = "movineDB"
-user = "movine"
-# password = ""
-port = 5432

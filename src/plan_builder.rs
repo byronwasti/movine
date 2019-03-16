@@ -143,12 +143,52 @@ impl PlanBuilder {
 
             PlanType::Fix => {
                 // 1. Find where we have to rollback to
+                let mut count = 0;
+                for (idx, migration) in combined_migrations.iter().rev().enumerate() {
+                    match migration {
+                        MigrationStatus::Variant(_, _) => {
+                            count = idx;
+                        }
+                        MigrationStatus::Divergent(_) => {
+                            count = idx;
+                        }
+                        _ => ()
+                    }
+                }
 
                 // 2. Rollback to that point
+                let mut migration_plan = MigrationPlan::new();
+                let mut up_migrations = Vec::new();
+                for (idx, migration) in combined_migrations.into_iter().rev().enumerate() {
+                    debug!("Rollbacks: {}, {}", idx, &migration);
+                    match migration {
+                        MigrationStatus::Pending(_) => (),
+                        MigrationStatus::Applied(m) => {
+                            let m: Migration = m.into();
+                            migration_plan.push((MigrationOp::Down, m.clone()));
+                            up_migrations.push(m);
+                        }
+                        MigrationStatus::Variant(m1, m2) => {
+                            migration_plan.push((MigrationOp::Down, m1.into()));
+                            up_migrations.push(m2.into());
+                        }
+                        MigrationStatus::Divergent(m) => {
+                            migration_plan.push((MigrationOp::Down, m.into()));
+                        }
+                        _ => ()
+                    }
+
+                    if idx == count {
+                        break;
+                    }
+                }
 
                 // 3. Run all pending migrations
+                for migration in up_migrations.into_iter().rev() {
+                    migration_plan.push((MigrationOp::Up, migration));
+                }
 
-                MigrationPlan::new()
+                migration_plan
             }
 
             PlanType::Custom => MigrationPlan::new(),
