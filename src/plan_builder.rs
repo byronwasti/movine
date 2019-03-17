@@ -152,7 +152,7 @@ impl PlanBuilder {
                         MigrationStatus::Divergent(_) => {
                             count = idx;
                         }
-                        _ => ()
+                        _ => (),
                     }
                 }
 
@@ -175,7 +175,7 @@ impl PlanBuilder {
                         MigrationStatus::Divergent(m) => {
                             migration_plan.push((MigrationOp::Down, m.into()));
                         }
-                        _ => ()
+                        _ => (),
                     }
 
                     if idx == count {

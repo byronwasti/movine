@@ -1,22 +1,24 @@
 # Movine
-[![Linux build status](https://api.travis-ci.com/doctor-stopsign/movine.svg)](https://travis-ci.com/doctor-stopsign/movine)
+[![Linux build status](https://api.travis-ci.com/yronbitsaw/movine.svg)](https://travis-ci.com/yronbitsaw/movine)
 [![Crates.io](https://img.shields.io/crates/v/movine.svg)](https://crates.io/crates/movine)
 
-Movine is a simple database migration manager that aims to be compatible with real-world migration work. Many migration managers are not compatible with branching development strategies for migrations. Movine attempts to solve this issue by keeping track of the unique hashes for the `up.sql` and `down.sql` for each migration, and allowing users to easily keep track of whether their local migration history matches the one on the database. Furthermore, Movine provides mechanisms to "fix" the database to reflect what the user has locally.
+Movine is a simple database migration manager that aims to be compatible with real-world migration work. Many migration managers get confused with complicated development strategies for the migrations. Movine attempts to solve this issue by keeping track of the unique hashes for the `up.sql` and `down.sql` for each migration. This allows users to easily keep track of whether their local migration history matches the one on the database.
 
-Additionally, Movine does *not* aim to be an ORM. Consider [diesel](http://diesel.rs/) instead if you want an ORM.
+This project is currently in *very* early stages, and should be considered a proof-of-concept. The base functionality is implemented, but things should be expected to change. 
 
-*NOTE: This project is currently in beta, and may change drastically.*
+Movine does *not* aim to be an ORM. Consider [diesel](http://diesel.rs/) instead if you want an ORM.
 
 ## Migration Concepts
 
-Movine keeps track of four different statuses of migrations on the database. There are the basic ones, "applied" and "pending" which correspond to migrations that are stored locally and are applied on the database, and migrations that are stored locally and not applied to the database. For migrations that are stored locally but seem to have a different version applied to the database, there is the status "variant". Finally, for migrations that are applied to the database but are not represented locally, there is the status "divergent."
+Movine keeps track of four different states of migrations on the database. There are the basic ones:
 
-In sum, 
-- Applied: Found locally and applied to database
-- Pending: Found locally and not applied to database
-- Variant: Found locally and differing version applied to database
-- Divergent: Not found locally and applied to database
+- Applied: Found locally and applied to the database
+- Pending: Found locally and not applied to the database
+
+Then there are the more complicated ones, which Movine was specifically designed to handle:
+
+- Variant: Found locally but a different version is applied to the database
+- Divergent: Not found locally but applied to the database
 
 ## Getting Started 
 The first step to get started with Movine is to set up the `movine.toml`. This file stores the connection parameters that Movine needs in order to connect to the database. In the future this file will also hold various parameters to customize the way Movine operates.
@@ -152,12 +154,6 @@ $ movine status
 ```
 
 The `custom` command will allow you to specify your own migration strategy (in case Movine is not smart enough). *Note: this is currently not implemented*
-
-## Todo
-
-There are a lot of things that need to be implemented or fixed, although the base functionality is all there.
-
-- [ ] 
 
 ## Why you should use Movine
 

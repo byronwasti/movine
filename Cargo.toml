@@ -1,13 +1,13 @@
 [package]
 name = "movine"
 license = "MIT"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["Byron Wasti <byron.wasti@gmail.com>"]
-homepage = "https://github.com/doctor-stopsign/movine"
-repository = "https://github.com/doctor-stopsign/movine"
+homepage = "https://github.com/yronbitsaw/movine"
+repository = "https://github.com/yronbitsaw/movine"
 description = "A simple database migration manager"
 readme = "README.md"
-travis-ci = { repository = "doctor-stopsign/movine", branch = "master" }
+travis-ci = { repository = "yronbitsaw/movine", branch = "master" }
 maintenance = { status = "actively-developed" }
 edition = "2018"
 keywords = ["migration", "database", "cli"]
@@ -21,5 +21,4 @@ structopt = "0.2.14"
 toml = "0.4.10"
 serde = { version = "1.0.88", features = ["derive"] }
 log = "0.4.6"
-ring = "0.14.6"
 termion = "1.5.1"

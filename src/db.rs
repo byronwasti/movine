@@ -1,14 +1,15 @@
 use crate::config::ConnectionParams;
 use crate::migration::{DbMigration, Migration, MigrationOp, MigrationPlan};
+use crate::errors::Error;
 use crate::sql::{LOG_DOWN_MIGRATION, LOG_UP_MIGRATION};
-use postgres::{Connection, Result, TlsMode};
+use postgres::{Connection, Result as PgResult, TlsMode};
 
 pub struct DBExecutor {
     conn: Connection,
 }
 
 impl DBExecutor {
-    pub fn new(conn_params: ConnectionParams) -> Self {
+    pub fn new(conn_params: ConnectionParams) -> Result<Self, Error> {
         let connection_params = format!(
             "postgresql://{user}:{password}@{host}:{port}/{database}",
             user = conn_params.user,
@@ -17,11 +18,11 @@ impl DBExecutor {
             port = conn_params.port,
             database = conn_params.database,
         );
-        let conn = Connection::connect(connection_params, TlsMode::None).unwrap();
-        Self { conn }
+        let conn = Connection::connect(connection_params, TlsMode::None)?;
+        Ok(Self { conn })
     }
 
-    pub fn run_migration_plan(&mut self, migration_plan: &MigrationPlan) -> Result<()> {
+    pub fn run_migration_plan(&mut self, migration_plan: &MigrationPlan) -> PgResult<()> {
         for migration_op in migration_plan {
             debug!("{:?}", migration_op);
             match migration_op {
@@ -43,6 +44,7 @@ impl DBExecutor {
                     } else {
                         error!("Something went wrong");
                     }
+                    println!("Up {}", &migration.get_name());
                 }
                 (MigrationOp::Down, migration) => {
                     let sql = &migration.down_sql;
@@ -55,13 +57,14 @@ impl DBExecutor {
                     } else {
                         error!("Something went wrong 2");
                     }
+                    println!("Down {}", &migration.get_name());
                 }
             }
         }
         Ok(())
     }
 
-    pub fn load_migrations(&self) -> Result<Vec<DbMigration>> {
+    pub fn load_migrations(&self) -> PgResult<Vec<DbMigration>> {
         let mut migrations = Vec::new();
         let sql = "
             SELECT name, up_hash, down_hash, down_sql

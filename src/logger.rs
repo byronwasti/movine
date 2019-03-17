@@ -15,10 +15,7 @@ pub fn init() -> Result<(), fern::InitError> {
                     message
                 ))
             } else {
-                out.finish(format_args!(
-                    "{}",
-                    message
-                ))
+                out.finish(format_args!("{}", message))
             }
         })
         .level(log::LevelFilter::Info)

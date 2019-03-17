@@ -20,46 +20,38 @@ use migration::Migration;
 use plan_builder::{PlanBuilder, PlanType};
 use structopt::StructOpt;
 
-fn main() {
-    logger::init().unwrap();
-    let config = config::load();
-    let mut db_exec = DBExecutor::new(config.connection);
+fn main() -> Result<(), Error> {
+    logger::init().expect("Could not initialize the logger");
+    let config = config::load()?;
+    let mut db_exec = DBExecutor::new(config.connection)?;
     let local = LocalMigrations::new();
-
-    match run(local, db_exec) {
-        Ok(_) => (),
-        Err(e) => {
-            dbg!(e);
-        }
-    }
+    run(local, db_exec)
 }
 
 fn run(mut local: LocalMigrations, mut db_exec: DBExecutor) -> Result<(), Error> {
     match Opt::from_args() {
         Opt::Init {} => {
-            local.init().unwrap();
-            let local_migrations = local.load_migrations().unwrap();
+            local.init()?;
+            let local_migrations = local.load_migrations()?;
             debug!("Local migrations: {:?}", local_migrations);
             let plan_type = PlanType::Up(None);
             let mut plan = PlanBuilder::new()
                 .set_local_migrations(local_migrations)
                 .with_no_db_migrations()
                 .build(plan_type);
-            db_exec.run_migration_plan(&plan).unwrap();
+            db_exec.run_migration_plan(&plan)?;
 
             Ok(())
         }
 
         Opt::Generate { name } => {
-            local.create_new_migration(&name).unwrap();
+            local.create_new_migration(&name)?;
 
             Ok(())
         }
 
         Opt::Status {} => {
-            let mut local_migrations = local
-                .load_migrations()
-                .map_err(|_| Error::NoMigrationsFolder)?;
+            let mut local_migrations = local.load_migrations()?;
             let mut db_migrations = db_exec.load_migrations();
             let mut status = if let Ok(db_migrations) = db_migrations {
                 PlanBuilder::new()
@@ -79,8 +71,8 @@ fn run(mut local: LocalMigrations, mut db_exec: DBExecutor) -> Result<(), Error>
         }
 
         Opt::Up { number, show_plan } => {
-            let mut local_migrations = local.load_migrations().unwrap();
-            let mut db_migrations = db_exec.load_migrations().unwrap();
+            let mut local_migrations = local.load_migrations()?;
+            let mut db_migrations = db_exec.load_migrations()?;
             let plan_type = PlanType::Up(number);
             let mut plan = PlanBuilder::new()
                 .set_local_migrations(local_migrations)
@@ -90,7 +82,7 @@ fn run(mut local: LocalMigrations, mut db_exec: DBExecutor) -> Result<(), Error>
             if show_plan {
                 view::display_plan(plan);
             } else {
-                db_exec.run_migration_plan(&plan).unwrap();
+                db_exec.run_migration_plan(&plan)?;
             }
 
             Ok(())
@@ -101,8 +93,8 @@ fn run(mut local: LocalMigrations, mut db_exec: DBExecutor) -> Result<(), Error>
             show_plan,
             ignore_divergent,
         } => {
-            let mut local_migrations = local.load_migrations().unwrap();
-            let mut db_migrations = db_exec.load_migrations().unwrap();
+            let mut local_migrations = local.load_migrations()?;
+            let mut db_migrations = db_exec.load_migrations()?;
             let plan_type = PlanType::Down(number, ignore_divergent);
             let mut plan = PlanBuilder::new()
                 .set_local_migrations(local_migrations)
@@ -112,15 +104,15 @@ fn run(mut local: LocalMigrations, mut db_exec: DBExecutor) -> Result<(), Error>
             if show_plan {
                 view::display_plan(plan);
             } else {
-                db_exec.run_migration_plan(&plan).unwrap();
+                db_exec.run_migration_plan(&plan)?;
             }
 
             Ok(())
         }
 
         Opt::Redo { number, show_plan } => {
-            let mut local_migrations = local.load_migrations().unwrap();
-            let mut db_migrations = db_exec.load_migrations().unwrap();
+            let mut local_migrations = local.load_migrations()?;
+            let mut db_migrations = db_exec.load_migrations()?;
             let plan_type = PlanType::Redo(number);
             let mut plan = PlanBuilder::new()
                 .set_local_migrations(local_migrations)
@@ -130,15 +122,15 @@ fn run(mut local: LocalMigrations, mut db_exec: DBExecutor) -> Result<(), Error>
             if show_plan {
                 view::display_plan(plan);
             } else {
-                db_exec.run_migration_plan(&plan).unwrap();
+                db_exec.run_migration_plan(&plan)?;
             }
 
             Ok(())
         }
 
         Opt::Fix { show_plan } => {
-            let mut local_migrations = local.load_migrations().unwrap();
-            let mut db_migrations = db_exec.load_migrations().unwrap();
+            let mut local_migrations = local.load_migrations()?;
+            let mut db_migrations = db_exec.load_migrations()?;
             let plan_type = PlanType::Fix;
             let mut plan = PlanBuilder::new()
                 .set_local_migrations(local_migrations)
@@ -148,7 +140,7 @@ fn run(mut local: LocalMigrations, mut db_exec: DBExecutor) -> Result<(), Error>
             if show_plan {
                 view::display_plan(plan);
             } else {
-                db_exec.run_migration_plan(&plan).unwrap();
+                db_exec.run_migration_plan(&plan)?;
             }
 
             Ok(())
