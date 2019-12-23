@@ -1,151 +1,175 @@
 #[macro_use]
 extern crate log;
-
-mod cli;
-mod config;
-mod db;
-mod errors;
-mod local;
-mod logger;
-mod migration;
-mod plan_builder;
-mod sql;
-mod view;
-
-use cli::Opt;
-use db::DBExecutor;
-use errors::Error;
-use local::LocalMigrations;
-use migration::Migration;
-use plan_builder::{PlanBuilder, PlanType};
+use chrono::prelude::*;
 use structopt::StructOpt;
 
-fn main() -> Result<(), Error> {
-    logger::init().expect("Could not initialize the logger");
-    let config = config::load()?;
-    let mut db_exec = DBExecutor::new(config.connection)?;
-    let local = LocalMigrations::new();
-    run(local, db_exec)
+mod adaptors;
+mod cli;
+mod config;
+mod display;
+mod errors;
+mod helpers;
+mod logger;
+mod match_maker;
+mod migration;
+mod plan_builder;
+
+use adaptors::DbAdaptor;
+use cli::Opt;
+use errors::{Result};
+use migration::{MigrationBuilder};
+use plan_builder::PlanBuilder;
+
+fn main() {
+    logger::init().expect("Could not initialize the logger.");
+    match run() {
+        Ok(()) => {}
+        Err(e) => println!("Error: {}", e),
+    }
 }
 
-fn run(mut local: LocalMigrations, mut db_exec: DBExecutor) -> Result<(), Error> {
+fn run() -> Result<()> {
     match Opt::from_args() {
-        Opt::Init {} => {
-            local.init()?;
-            let local_migrations = local.load_migrations()?;
-            debug!("Local migrations: {:?}", local_migrations);
-            let plan_type = PlanType::Up(None);
-            let mut plan = PlanBuilder::new()
-                .set_local_migrations(local_migrations)
-                .with_no_db_migrations()
-                .build(plan_type);
-            db_exec.run_migration_plan(&plan)?;
-
-            Ok(())
-        }
-
-        Opt::Generate { name } => {
-            local.create_new_migration(&name)?;
-
-            Ok(())
-        }
-
-        Opt::Status {} => {
-            let mut local_migrations = local.load_migrations()?;
-            let mut db_migrations = db_exec.load_migrations();
-            let mut status = if let Ok(db_migrations) = db_migrations {
-                PlanBuilder::new()
-                    .set_local_migrations(local_migrations)
-                    .set_db_migrations(db_migrations)
-                    .get_status()
-            } else {
-                PlanBuilder::new()
-                    .set_local_migrations(local_migrations)
-                    .with_no_db_migrations()
-                    .get_status()
-            };
-
-            view::display_status(&status);
-
-            Ok(())
-        }
-
-        Opt::Up { number, show_plan } => {
-            let mut local_migrations = local.load_migrations()?;
-            let mut db_migrations = db_exec.load_migrations()?;
-            let plan_type = PlanType::Up(number);
-            let mut plan = PlanBuilder::new()
-                .set_local_migrations(local_migrations)
-                .set_db_migrations(db_migrations)
-                .build(plan_type);
-
-            if show_plan {
-                view::display_plan(plan);
-            } else {
-                db_exec.run_migration_plan(&plan)?;
-            }
-
-            Ok(())
-        }
-
+        Opt::Init {} => initialize(),
+        Opt::Generate { name } => generate(&name),
+        Opt::Status {} => status(),
+        Opt::Up { number, show_plan } => up(number, show_plan),
         Opt::Down {
             number,
             show_plan,
             ignore_divergent,
-        } => {
-            let mut local_migrations = local.load_migrations()?;
-            let mut db_migrations = db_exec.load_migrations()?;
-            let plan_type = PlanType::Down(number, ignore_divergent);
-            let mut plan = PlanBuilder::new()
-                .set_local_migrations(local_migrations)
-                .set_db_migrations(db_migrations)
-                .build(plan_type);
-
-            if show_plan {
-                view::display_plan(plan);
-            } else {
-                db_exec.run_migration_plan(&plan)?;
-            }
-
-            Ok(())
-        }
-
-        Opt::Redo { number, show_plan } => {
-            let mut local_migrations = local.load_migrations()?;
-            let mut db_migrations = db_exec.load_migrations()?;
-            let plan_type = PlanType::Redo(number);
-            let mut plan = PlanBuilder::new()
-                .set_local_migrations(local_migrations)
-                .set_db_migrations(db_migrations)
-                .build(plan_type);
-
-            if show_plan {
-                view::display_plan(plan);
-            } else {
-                db_exec.run_migration_plan(&plan)?;
-            }
-
-            Ok(())
-        }
-
-        Opt::Fix { show_plan } => {
-            let mut local_migrations = local.load_migrations()?;
-            let mut db_migrations = db_exec.load_migrations()?;
-            let plan_type = PlanType::Fix;
-            let mut plan = PlanBuilder::new()
-                .set_local_migrations(local_migrations)
-                .set_db_migrations(db_migrations)
-                .build(plan_type);
-
-            if show_plan {
-                view::display_plan(plan);
-            } else {
-                db_exec.run_migration_plan(&plan)?;
-            }
-
-            Ok(())
-        }
-
+        } => down(number, show_plan, ignore_divergent),
+        Opt::Redo { number, show_plan } => redo(number, show_plan),
+        Opt::Fix { show_plan } => fix(show_plan),
         _ => unimplemented!(),
+    }
+}
+
+fn initialize() -> Result<()> {
+    let config = config::load_config()?;
+    helpers::create_migration_directory()?;
+    let adaptor = adaptors::get_adaptor(&config.meta.database, &config.connection)?;
+    let up_sql = adaptor.init_up_sql();
+    let down_sql = adaptor.init_down_sql();
+
+    let init_migration = MigrationBuilder::new()
+        .name(&"movine_init")
+        .date(Utc.timestamp(0, 0))
+        .up_sql(&up_sql)
+        .down_sql(&down_sql)
+        .build()?;
+
+    helpers::write_migration(&init_migration)?;
+
+    // Can't just call to `up` function since we are unable to get
+    // database migrations until we run this migration.
+    let local_migrations = helpers::load_local_migrations()?;
+    let db_migrations = Vec::new();
+    let plan = PlanBuilder::new()
+        .local_migrations(&local_migrations)
+        .db_migrations(&db_migrations)
+        .up()?;
+    adaptor.run_migration_plan(&plan)
+}
+
+fn generate(name: &str) -> Result<()> {
+    let new_migration = MigrationBuilder::new()
+        .name(name)
+        .date(Utc::now())
+        .build()?;
+    helpers::write_migration(&new_migration)
+}
+
+fn status() -> Result<()> {
+    let config = config::load_config()?;
+    let adaptor = adaptors::get_adaptor(&config.meta.database, &config.connection)?;
+    let local_migrations = helpers::load_local_migrations()?;
+    let db_migrations = adaptor.load_migrations()?;
+
+    let status = PlanBuilder::new()
+        .local_migrations(&local_migrations)
+        .db_migrations(&db_migrations)
+        .status()?;
+
+    display::print_status(&status);
+    Ok(())
+}
+
+fn up(number: Option<usize>, show_plan: bool) -> Result<()> {
+    let config = config::load_config()?;
+    let adaptor = adaptors::get_adaptor(&config.meta.database, &config.connection)?;
+    let local_migrations = helpers::load_local_migrations()?;
+    let db_migrations = adaptor.load_migrations()?;
+
+    let plan = PlanBuilder::new()
+        .local_migrations(&local_migrations)
+        .db_migrations(&db_migrations)
+        .count(number)
+        .up()?;
+
+    if show_plan {
+        display::print_plan(&plan);
+        Ok(())
+    } else {
+        adaptor.run_migration_plan(&plan)
+    }
+}
+
+fn down(number: Option<usize>, show_plan: bool, _ignore_divergent: bool) -> Result<()> {
+    let config = config::load_config()?;
+    let adaptor = adaptors::get_adaptor(&config.meta.database, &config.connection)?;
+    let local_migrations = helpers::load_local_migrations()?;
+    let db_migrations = adaptor.load_migrations()?;
+
+    let plan = PlanBuilder::new()
+        .local_migrations(&local_migrations)
+        .db_migrations(&db_migrations)
+        .count(number)
+        .down()?;
+
+    if show_plan {
+        display::print_plan(&plan);
+        Ok(())
+    } else {
+        adaptor.run_migration_plan(&plan)
+    }
+}
+
+fn fix(show_plan: bool) -> Result<()> {
+    let config = config::load_config()?;
+    let adaptor = adaptors::get_adaptor(&config.meta.database, &config.connection)?;
+    let local_migrations = helpers::load_local_migrations()?;
+    let db_migrations = adaptor.load_migrations()?;
+
+    let plan = PlanBuilder::new()
+        .local_migrations(&local_migrations)
+        .db_migrations(&db_migrations)
+        .fix()?;
+
+    if show_plan {
+        display::print_plan(&plan);
+        Ok(())
+    } else {
+        adaptor.run_migration_plan(&plan)
+    }
+}
+
+fn redo(number: Option<usize>, show_plan: bool) -> Result<()> {
+    let config = config::load_config()?;
+    let adaptor = adaptors::get_adaptor(&config.meta.database, &config.connection)?;
+    let local_migrations = helpers::load_local_migrations()?;
+    let db_migrations = adaptor.load_migrations()?;
+
+    let plan = PlanBuilder::new()
+        .local_migrations(&local_migrations)
+        .db_migrations(&db_migrations)
+        .count(number)
+        .redo()?;
+
+    if show_plan {
+        display::print_plan(&plan);
+        Ok(())
+    } else {
+        adaptor.run_migration_plan(&plan)
     }
 }

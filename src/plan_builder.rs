@@ -1,252 +1,271 @@
-use crate::migration::{
-    DbMigration, LocalMigration, Migration, MigrationOp, MigrationPlan, MigrationStatus,
-};
+use crate::errors::{Error, Result};
+use crate::match_maker::{self, Matching};
+use crate::migration::Migration;
 
-#[derive(Debug, Copy, Clone)]
-pub enum PlanType {
-    Up(Option<usize>),
-    Down(Option<usize>, bool),
-    Redo(Option<usize>),
-    Fix,
-    Custom,
+pub struct PlanBuilder<'a> {
+    local_migrations: Option<&'a [Migration]>,
+    db_migrations: Option<&'a [Migration]>,
+    count: Option<usize>,
 }
 
-pub struct PlanBuilder {
-    local_migrations: Option<Vec<LocalMigration>>,
-    db_migrations: Option<Vec<DbMigration>>,
-}
-
-impl PlanBuilder {
+impl<'a> PlanBuilder<'a> {
     pub fn new() -> Self {
         Self {
             local_migrations: None,
             db_migrations: None,
+            count: None,
         }
     }
 
-    pub fn set_local_migrations<'a>(
-        &'a mut self,
-        mut migrations: Vec<LocalMigration>,
-    ) -> &'a mut Self {
-        migrations.sort_unstable_by(|a, b| a.get_date().cmp(&b.get_date()));
-        self.local_migrations = Some(migrations);
+    pub fn local_migrations(mut self, m: &'a [Migration]) -> Self {
+        self.local_migrations = Some(m);
         self
     }
 
-    pub fn set_db_migrations<'a>(&'a mut self, mut migrations: Vec<DbMigration>) -> &'a mut Self {
-        migrations.sort_unstable_by(|a, b| a.get_date().cmp(&b.get_date()));
-        self.db_migrations = Some(migrations);
+    pub fn db_migrations(mut self, m: &'a [Migration]) -> Self {
+        self.db_migrations = Some(m);
         self
     }
 
-    pub fn with_no_db_migrations<'a>(&'a mut self) -> &'a mut Self {
-        self.db_migrations = Some(Vec::new());
+    pub fn count(mut self, count: Option<usize>) -> Self {
+        self.count = count;
         self
     }
 
-    pub fn get_status<'a>(&'a mut self) -> Vec<MigrationStatus> {
-        self.combine_migrations()
-    }
-
-    pub fn build<'a>(&'a mut self, plan_type: PlanType) -> MigrationPlan {
-        let combined_migrations = self.combine_migrations();
-        debug!("Combined migrations: {:?}", combined_migrations);
-
-        match plan_type {
-            PlanType::Up(n) => {
-                let mut count = 0;
-                let mut migration_plan = MigrationPlan::new();
-                for migration in combined_migrations.into_iter() {
-                    if let Some(max) = n {
-                        if count == max {
-                            break;
-                        }
-                    }
-                    if let MigrationStatus::Pending(migration) = migration {
-                        migration_plan.push((MigrationOp::Up, migration.into()));
-                        count += 1;
-                    }
-                }
-                migration_plan
-            }
-
-            PlanType::Down(n, ignore_divergent) => {
-                let mut count = 0;
-                let mut migration_plan = MigrationPlan::new();
-                for migration in combined_migrations.into_iter().rev() {
-                    if let Some(max) = n {
-                        if count == max {
-                            break;
-                        }
-                    } else {
-                        if count == 1 {
-                            break;
-                        }
-                    }
-
-                    match migration {
-                        MigrationStatus::Applied(migration) => {
-                            migration_plan.push((MigrationOp::Down, migration.into()));
-                            count += 1;
-                        }
-                        MigrationStatus::Variant(m1, m2) => {
-                            migration_plan.push((MigrationOp::Down, m1.into()));
-                            count += 1;
-                        }
-                        MigrationStatus::Divergent(migration) => {
-                            if !ignore_divergent {
-                                migration_plan.push((MigrationOp::Down, migration.into()));
-                                count += 1;
-                            }
-                        }
-                        _ => (),
-                    }
-                }
-                migration_plan
-            }
-
-            PlanType::Redo(n) => {
-                let mut count = 0;
-                let mut migration_plan = MigrationPlan::new();
-                let mut up_migrations = Vec::new();
-                for migration in combined_migrations.into_iter().rev() {
-                    if let Some(max) = n {
-                        if count == max {
-                            break;
-                        }
-                    } else {
-                        if count == 1 {
-                            break;
-                        }
-                    }
-
-                    match migration {
-                        MigrationStatus::Applied(migration) => {
-                            let migration: Migration = migration.into();
-                            migration_plan.push((MigrationOp::Down, migration.clone()));
-                            up_migrations.push(migration);
-                            count += 1;
-                        }
-                        MigrationStatus::Variant(m1, m2) => {
-                            migration_plan.push((MigrationOp::Down, m1.into()));
-                            up_migrations.push(m2.into());
-                            count += 1;
-                        }
-                        _ => (),
-                    }
-                }
-                for migration in up_migrations.into_iter().rev() {
-                    migration_plan.push((MigrationOp::Up, migration));
-                }
-                migration_plan
-            }
-
-            PlanType::Fix => {
-                // 1. Find where we have to rollback to
-                let mut count = 0;
-                for (idx, migration) in combined_migrations.iter().rev().enumerate() {
-                    match migration {
-                        MigrationStatus::Variant(_, _) => {
-                            count = idx;
-                        }
-                        MigrationStatus::Divergent(_) => {
-                            count = idx;
-                        }
-                        _ => (),
-                    }
-                }
-
-                // 2. Rollback to that point
-                let mut migration_plan = MigrationPlan::new();
-                let mut up_migrations = Vec::new();
-                for (idx, migration) in combined_migrations.into_iter().rev().enumerate() {
-                    debug!("Rollbacks: {}, {}", idx, &migration);
-                    match migration {
-                        MigrationStatus::Pending(_) => (),
-                        MigrationStatus::Applied(m) => {
-                            let m: Migration = m.into();
-                            migration_plan.push((MigrationOp::Down, m.clone()));
-                            up_migrations.push(m);
-                        }
-                        MigrationStatus::Variant(m1, m2) => {
-                            migration_plan.push((MigrationOp::Down, m1.into()));
-                            up_migrations.push(m2.into());
-                        }
-                        MigrationStatus::Divergent(m) => {
-                            migration_plan.push((MigrationOp::Down, m.into()));
-                        }
-                        _ => (),
-                    }
-
-                    if idx == count {
-                        break;
-                    }
-                }
-
-                // 3. Run all pending migrations
-                for migration in up_migrations.into_iter().rev() {
-                    migration_plan.push((MigrationOp::Up, migration));
-                }
-
-                migration_plan
-            }
-
-            PlanType::Custom => MigrationPlan::new(),
-
-            _ => MigrationPlan::new(),
-        }
-    }
-
-    fn combine_migrations(&mut self) -> Vec<MigrationStatus> {
-        if let (Some(local), Some(db)) = (&mut self.local_migrations, &mut self.db_migrations) {
-            let mut local_iter = local.drain(..);
-            let mut db_iter = db.drain(..);
-
-            let mut local_e = local_iter.next();
-            let mut db_e = db_iter.next();
-
-            let mut statuses = Vec::new();
-            loop {
-                let local = local_e.take();
-                let db = db_e.take();
-                match (db, local) {
-                    (Some(d), Some(l)) => {
-                        if d.get_name() == l.get_name() {
-                            let diff_up_hashes = d.get_up_hash() == l.get_up_hash();
-                            let diff_down_hashes = d.get_down_hash() == l.get_down_hash();
-                            if diff_up_hashes && diff_down_hashes {
-                                statuses.push(MigrationStatus::Applied(l));
-                            } else {
-                                statuses.push(MigrationStatus::Variant(d, l));
-                            }
-
-                            db_e = db_iter.next();
-                            local_e = local_iter.next();
-                        } else {
-                            if d.get_date() < l.get_date() {
-                                statuses.push(MigrationStatus::Divergent(d));
-                                db_e = db_iter.next();
-                            } else {
-                                statuses.push(MigrationStatus::Pending(l));
-                                local_e = local_iter.next();
-                            }
-                        }
-                    }
-                    (Some(d), None) => {
-                        statuses.push(MigrationStatus::Divergent(d));
-                        db_e = db_iter.next();
-                    }
-                    (None, Some(l)) => {
-                        statuses.push(MigrationStatus::Pending(l));
-                        local_e = local_iter.next();
-                    }
-                    (None, None) => break,
-                }
-            }
-
-            statuses
+    pub fn up(self) -> Result<Plan<'a>> {
+        let matches = self.get_matches()?;
+        let plan = matches
+            .iter()
+            .filter(|x| match x {
+                Matching::Pending(_) => true,
+                _ => false,
+            })
+            .map(|x| (Step::Up, x.get_local_migration().unwrap()));
+        let plan = if let Some(count) = self.count {
+            plan.take(count).collect()
         } else {
-            Vec::new()
+            plan.collect()
+        };
+        Ok(plan)
+    }
+
+    pub fn down(self) -> Result<Plan<'a>> {
+        let matches = self.get_matches()?;
+        let plan = matches
+            .iter()
+            .filter(|x| match x {
+                Matching::Pending(_) => false,
+                _ => true,
+            })
+            .map(|x| {
+                let migration = match x {
+                    Matching::Applied(x) => x,
+                    Matching::Divergent(x) => x,
+                    Matching::Variant(x, y) => {
+                        if y.down_sql.is_some() {
+                            y
+                        } else {
+                            x
+                        }
+                    }
+                    _ => unreachable!(),
+                };
+                (Step::Down, *migration)
+            })
+            .rev()
+            // We don't want to rollback everything by default
+            .take(self.count.unwrap_or(1))
+            .collect();
+        Ok(plan)
+    }
+
+    pub fn fix(self) -> Result<Plan<'a>> {
+        let matches = self.get_matches()?;
+        let filtered_matches: Vec<_> = matches
+            .iter()
+            .filter(|x| match x {
+                Matching::Divergent(_) | Matching::Variant(_, _) => true,
+                _ => false,
+            }).collect();
+
+        let plan_down: Vec<_> = filtered_matches
+            .iter()
+            .map(|x| (Step::Down, x.get_best_down_migration()))
+            .rev()
+            .collect();
+
+        let mut plan_up: Vec<_> = filtered_matches
+            .iter()
+            .filter_map(|x| x.get_local_migration())
+            .map(|x| (Step::Up, x))
+            .collect();
+
+        let mut plan = plan_down;
+        plan.append(&mut plan_up);
+        Ok(plan)
+    }
+
+    pub fn redo(self) -> Result<Plan<'a>> {
+        let matches = self.get_matches()?;
+        let filtered_matches: Vec<_> = matches
+            .iter()
+            .filter(|x| match x {
+                Matching::Applied(_) | Matching::Variant(_, _) => true,
+                _ => false,
+            }).collect();
+
+        let plan_down: Vec<_> = filtered_matches
+            .iter()
+            // Unwrap is safe since it won't be a Divergent matching
+            .map(|x| (Step::Down, x.get_local_migration().unwrap()))
+            .rev()
+            .take(self.count.unwrap_or(1))
+            .collect();
+
+        let mut plan_up: Vec<_> = filtered_matches
+            .iter()
+            // Unwrap is safe since it won't be a Divergent matching
+            .map(|x| (Step::Up, x.get_local_migration().unwrap()))
+            .take(self.count.unwrap_or(1))
+            .collect();
+
+        let mut plan = plan_down;
+        plan.append(&mut plan_up);
+        Ok(plan)
+    }
+
+    pub fn status(self) -> Result<Vec<Matching<'a>>> {
+        self.get_matches()
+    }
+
+    fn get_matches(&self) -> Result<Vec<Matching<'a>>> {
+        if let (Some(local_migrations), Some(db_migrations)) =
+            (self.local_migrations, self.db_migrations)
+        {
+            let mut matches = match_maker::find_matches(local_migrations, db_migrations);
+            matches.sort();
+            Ok(matches)
+        } else {
+            Err(Error::Unknown)
         }
+    }
+}
+
+pub type Plan<'a> = Vec<(Step, &'a Migration)>;
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Step {
+    Up,
+    Down,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::migration::{Migration, MigrationBuilder};
+
+    // QoL impl
+    impl Migration {
+        fn new(name: &str) -> Self {
+            Self {
+                name: name.to_string(),
+                up_sql: None,
+                down_sql: None,
+                hash: None,
+            }
+        }
+
+        fn new_with_hash(name: &str, hash: &str) -> Self {
+            Self {
+                name: name.to_string(),
+                up_sql: None,
+                down_sql: None,
+                hash: Some(hash.to_string()),
+            }
+        }
+    }
+
+    #[test]
+    fn test_up_1() {
+        let local = [Migration::new(&"test")];
+        let db = [];
+        let plan = PlanBuilder::new()
+            .local_migrations(&local)
+            .db_migrations(&db)
+            .up().unwrap();
+        assert_eq!(plan, [(Step::Up, &local[0])])
+    }
+
+    #[test]
+    fn test_up_2() {
+        let local = [Migration::new(&"test"), Migration::new(&"test_2")];
+        let db = [Migration::new(&"test"), Migration::new(&"test_3")];
+        let plan = PlanBuilder::new()
+            .local_migrations(&local)
+            .db_migrations(&db)
+            .up().unwrap();
+        assert_eq!(plan, [(Step::Up, &local[1])])
+    }
+
+    #[test]
+    fn test_down_1() {
+        let local = [Migration::new(&"test"), Migration::new(&"test_2")];
+        let db = [Migration::new(&"test"), Migration::new(&"test_3")];
+        let plan = PlanBuilder::new()
+            .local_migrations(&local)
+            .db_migrations(&db)
+            .down().unwrap();
+        assert_eq!(plan, [(Step::Down, &db[1])])
+    }
+
+    #[test]
+    fn test_fix_1() {
+        let local = [
+            Migration::new(&"test"),
+            Migration::new(&"test_1"),
+            Migration::new(&"test_2")
+        ];
+        let db = [
+            Migration::new(&"test"),
+            Migration::new_with_hash(&"test_1", &"hash"),
+            Migration::new_with_hash(&"test_2", &"hash"),
+            Migration::new(&"test_3")
+        ];
+        let plan = PlanBuilder::new()
+            .local_migrations(&local)
+            .db_migrations(&db)
+            .fix().unwrap();
+        assert_eq!(
+            plan,
+            [
+                (Step::Down, &db[3]),
+                (Step::Down, &local[2]),
+                (Step::Down, &local[1]),
+                (Step::Up, &local[1]),
+                (Step::Up, &local[2]),
+            ])
+    }
+
+    #[test]
+    fn test_redo_1() {
+        let local = [Migration::new(&"test"), Migration::new(&"test_2")];
+        let db = [
+            Migration::new(&"test"),
+            Migration::new_with_hash(&"test_2", &"hash_1"),
+            Migration::new(&"test_3")
+        ];
+        let plan = PlanBuilder::new()
+            .local_migrations(&local)
+            .db_migrations(&db)
+            .count(Some(2))
+            .redo().unwrap();
+        assert_eq!(
+            plan,
+            [
+                (Step::Down, &local[1]),
+                (Step::Down, &local[0]),
+                (Step::Up, &local[0]),
+                (Step::Up, &local[1]),
+            ])
     }
 }

@@ -63,6 +63,8 @@ $ movine status
 ## Commands
 There are a few commands that Movine uses, and all of them can be listed by using `--help` on the command line.
 
+### Init
+
 The `init` command will run the initialization routine for Movine, which will create a table on the database to keep track of migrations and create a local migrations folder.
 ```
 $ movine init
@@ -83,6 +85,8 @@ $ psql $PARAMS -c "\d"
  public | movine_migrations_id_seq | sequence | movine
 ```
 
+### Generate
+
 The `generate` command will generate a folder with the current date and the given name in the `migrations/` directory with blank `up.sql` and `down.sql` files.
 ```
 $ movine generate create_new_table
@@ -98,6 +102,8 @@ migrations/
 2 directories, 4 files
 ```
 
+### Status
+
 The `status` command will tell you the current state of all migrations, both local and on the database.
 
 ```
@@ -105,6 +111,7 @@ $ movine status
 2019-03-17 16:34:51 UTC - Pending   2019-03-17-163451_create_new_table
 1970-01-01 00:00:00 UTC - Applied   1970-01-01-000000_movine_init
 ```
+### Up
 
 The `up` command will run all pending migrations. You can also run with the `-p` flag to show the migration plan without running it. This is true for all commands that modify the database and is useful for seeing if Movine will do what you expect.
 
@@ -120,6 +127,8 @@ $ movine status
 1970-01-01 00:00:00 UTC - Applied   1970-01-01-000000_movine_init
 ```
 
+### Down
+
 The `down` command will rollback the most recent migration.
 ```
 $ movine down
@@ -127,6 +136,8 @@ $ movine status
 2019-03-17 16:34:51 UTC - Pending   2019-03-17-163451_create_new_table
 1970-01-01 00:00:00 UTC - Applied   1970-01-01-000000_movine_init
 ```
+
+### Redo
 
 The `redo` command will rollback and then re-apply the most recent applied migration or variant migration.
 ```
@@ -138,6 +149,8 @@ $ movine status
 2019-03-17 16:34:51 UTC - Applied   2019-03-17-163451_create_new_table
 1970-01-01 00:00:00 UTC - Applied   1970-01-01-000000_movine_init
 ```
+
+### Fix
 
 The `fix` command will rollback everything until there are no divergent or variant migrations, and then apply all migrations _except_ the migrations that were pending at the start.
 ```
@@ -152,6 +165,8 @@ $ movine status
 2019-03-17 16:34:51 UTC - Applied   2019-03-17-163451_create_new_table
 1970-01-01 00:00:00 UTC - Applied   1970-01-01-000000_movine_init
 ```
+
+### Custom
 
 The `custom` command will allow you to specify your own migration strategy (in case Movine is not smart enough). *Note: this is currently not implemented*
 
