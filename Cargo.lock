@@ -215,7 +215,7 @@ dependencies = [
 
 [[package]]
 name = "movine"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "fern 0.5.9 (registry+https://github.com/rust-lang/crates.io-index)",
