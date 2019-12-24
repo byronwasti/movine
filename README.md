@@ -1,5 +1,5 @@
 # Movine
-[![Linux build status](https://api.travis-ci.com/yronbitsaw/movine.svg)](https://travis-ci.com/yronbitsaw/movine)
+![Linux build status](https://github.com/byronwasti/movine/workflows/Rust/badge.svg)
 [![Crates.io](https://img.shields.io/crates/v/movine.svg)](https://crates.io/crates/movine)
 
 Movine is a simple database migration manager that aims to be compatible with real-world migration work. Many migration managers get confused with complicated development strategies for the migrations. Movine attempts to solve this issue by keeping track of the unique hashes for the `up.sql` and `down.sql` for each migration. This allows users to easily keep track of whether their local migration history matches the one on the database.
