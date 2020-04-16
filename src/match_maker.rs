@@ -63,14 +63,6 @@ impl<'a> Matching<'a> {
             Divergent(_) => None,
         }
     }
-
-    pub fn get_db_migration(&self) -> Option<&'a Migration> {
-        use Matching::*;
-        match self {
-            Applied(_) | Pending(_) => None,
-            Variant(_, x) | Divergent(x) => Some(x),
-        }
-    }
 }
 
 impl Ord for Matching<'_> {

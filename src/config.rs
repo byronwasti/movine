@@ -1,5 +1,5 @@
-use crate::errors::{Error, Result};
 use crate::adaptor::{DbAdaptor, PostgresAdaptor, SqliteAdaptor};
+use crate::errors::{Error, Result};
 use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
@@ -20,7 +20,13 @@ impl Config {
         Ok(config)
     }
 
-    pub fn from_postgres_params(username: &str, password: &str, host: &str, database: &str, port: i32) -> Self {
+    pub fn from_postgres_params(
+        username: &str,
+        password: &str,
+        host: &str,
+        database: &str,
+        port: i32,
+    ) -> Self {
         let pg_params = PostgresParams {
             username: username.into(),
             password: password.into(),

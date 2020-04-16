@@ -1,5 +1,3 @@
-#[macro_use]
-extern crate log;
 use chrono::prelude::*;
 
 pub mod adaptor;
@@ -13,8 +11,8 @@ mod match_maker;
 mod migration;
 mod plan_builder;
 
-pub use config::Config;
 use adaptor::DbAdaptor;
+pub use config::Config;
 use errors::Result;
 use file_handler::FileHandler;
 use migration::MigrationBuilder;

@@ -170,7 +170,7 @@ pub enum Step {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::migration::{Migration, MigrationBuilder};
+    use crate::migration::Migration;
 
     // QoL impl
     impl Migration {
@@ -311,15 +311,15 @@ mod tests {
             .fix()
             .unwrap();
         let expected = [
-                (Step::Down, &local[4]),
-                (Step::Down, &db[3]),
-                (Step::Down, &local[2]),
-                (Step::Down, &local[1]),
-                (Step::Up, &local[1]),
-                (Step::Up, &local[2]),
-                (Step::Up, &local[3]),
-                (Step::Up, &local[4]),
-            ];
+            (Step::Down, &local[4]),
+            (Step::Down, &db[3]),
+            (Step::Down, &local[2]),
+            (Step::Down, &local[1]),
+            (Step::Up, &local[1]),
+            (Step::Up, &local[2]),
+            (Step::Up, &local[3]),
+            (Step::Up, &local[4]),
+        ];
         assert_eq!(actual, expected)
     }
 
