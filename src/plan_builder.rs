@@ -86,8 +86,8 @@ impl<'a> PlanBuilder<'a> {
         let matches_to_fix: Vec<_> = matches
             .iter()
             .skip_while(|x| match x {
-                Matching::Divergent(_) | Matching::Variant(_, _) => false,
-                _ => true,
+                Matching::Applied(_) => true,
+                _ => false,
             })
             .collect();
 
@@ -319,6 +319,26 @@ mod tests {
             (Step::Up, &local[2]),
             (Step::Up, &local[3]),
             (Step::Up, &local[4]),
+        ];
+        assert_eq!(actual, expected)
+    }
+
+    #[test]
+    fn test_fix_4() {
+        let local = [
+            Migration::new(&"test_0"),
+            Migration::new(&"test_1"),
+        ];
+        let db = [
+            Migration::new(&"test_0"),
+        ];
+        let actual = PlanBuilder::new()
+            .local_migrations(&local)
+            .db_migrations(&db)
+            .fix()
+            .unwrap();
+        let expected = [
+            (Step::Up, &local[1]),
         ];
         assert_eq!(actual, expected)
     }

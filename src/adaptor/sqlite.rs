@@ -3,19 +3,19 @@ use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use crate::plan_builder::Step;
 use rusqlite::{params, Connection};
-use serde::Deserialize; //::{params, Connection, Result};
-
-#[derive(Debug, Deserialize)]
-pub struct SqliteParams {
-    pub file: String,
-}
+use crate::config::SqliteParams;
 
 pub struct SqliteAdaptor {
     conn: Connection,
 }
 
 impl SqliteAdaptor {
-    pub fn new(params: &SqliteParams) -> Result<Self> {
+    pub fn new(filename: &str) -> Result<Self> {
+        let conn = Connection::open(filename)?;
+        Ok(Self { conn })
+    }
+
+    pub fn from_params(params: &SqliteParams) -> Result<Self> {
         let conn = Connection::open(&params.file)?;
         Ok(Self { conn })
     }

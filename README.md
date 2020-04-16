@@ -175,21 +175,32 @@ $ movine status
 The `custom` command will allow you to specify your own migration strategy (in case Movine is not smart enough). *Note: this is currently not implemented*
 
 ## Library Usage
-_Note: the API will likely be completely refactored_
+_Note: this API is in flux_
 
 Movine can be used as a library like so:
-```
+```rust
 use movine::{Movine, Config};
 use movine::errors::Error;
 
 fn main() -> Result<(), Error> {
-    let config = Config::from_sqlite_params("file.db");
-    let adaptor = config.into_adaptor()?;
-    let mut movine = Movine::new(adaptor, &"./migrations");
-    // Need both fix & up since `fix` (currently) does not run raw-pending migrations.
-    // This is a temporary bug.
-    movine.fix(false)?;
-    movine.up(None, false)?;
+    let config = Config::from_file("movine.toml")?;
+    let adaptor = config.into_sqlite_adaptor()?;
+    let mut movine = Movine::new(adaptor);
+    movine.fix()?;
+    Ok(())
+}
+```
+
+Or, if you want to provide the params without going through the config file:
+```rust
+use movine::{Movine, Config};
+use movine::adaptor::SqliteAdaptor;
+use movine::errors::Error;
+
+fn main() -> Result<(), Error> {
+    let adaptor = SqliteAdaptor::new("file.db")?;
+    let mut movine = Movine::new(adaptor);
+    movine.fix()?;
     Ok(())
 }
 ```

@@ -2,27 +2,31 @@ use crate::adaptor::DbAdaptor;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use crate::plan_builder::Step;
+use crate::config::PostgresParams;
 use postgres;
-use serde::Deserialize;
-
-#[derive(Debug, Deserialize)]
-pub struct PostgresParams {
-    pub username: String,
-    pub password: String,
-    pub host: String,
-    pub database: String,
-    pub port: i32,
-}
 
 pub struct PostgresAdaptor {
     conn: postgres::Connection,
 }
 
 impl PostgresAdaptor {
-    pub fn new(params: &PostgresParams) -> Result<Self> {
+    pub fn new(user: &str, password: &str, host: &str, database: &str, port: &str) -> Result<Self> {
         let connection_params = format!(
             "postgresql://{user}:{password}@{host}:{port}/{database}",
-            user = params.username,
+            user = user,
+            password = password,
+            host = host,
+            port = port,
+            database = database,
+        );
+        let conn = postgres::Connection::connect(connection_params, postgres::TlsMode::None)?;
+        Ok(Self { conn })
+    }
+
+    pub fn from_params(params: &PostgresParams) -> Result<Self> {
+        let connection_params = format!(
+            "postgresql://{user}:{password}@{host}:{port}/{database}",
+            user = params.user,
             password = params.password,
             host = params.host,
             port = params.port,

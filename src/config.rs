@@ -1,9 +1,15 @@
-use crate::adaptor::{PostgresAdaptor, PostgresParams, SqliteAdaptor, SqliteParams};
+use crate::adaptor::{PostgresAdaptor, SqliteAdaptor};
 use crate::errors::{Error, Result};
 use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
 use toml;
+
+mod postgres;
+mod sqlite;
+
+pub use sqlite::SqliteParams;
+pub use self::postgres::PostgresParams;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -25,12 +31,28 @@ impl Config {
             Config {
                 postgres: Some(params),
                 ..
-            } => Ok(Adaptor::Postgres(PostgresAdaptor::new(&params)?)),
+            } => Ok(Adaptor::Postgres(PostgresAdaptor::from_params(&params)?)),
             Config {
                 sqlite: Some(params),
                 ..
-            } => Ok(Adaptor::Sqlite(SqliteAdaptor::new(&params)?)),
+            } => Ok(Adaptor::Sqlite(SqliteAdaptor::from_params(&params)?)),
             _ => Err(Error::AdaptorNotFound),
+        }
+    }
+
+    pub fn into_pg_adaptor(self) -> Result<PostgresAdaptor> {
+        if let Some(params) = self.postgres {
+            Ok(PostgresAdaptor::from_params(&params)?)
+        } else {
+            Err(Error::AdaptorNotFound)
+        }
+    }
+
+    pub fn into_sqlite_adaptor(self) -> Result<SqliteAdaptor> {
+        if let Some(params) = self.sqlite {
+            Ok(SqliteAdaptor::from_params(&params)?)
+        } else {
+            Err(Error::AdaptorNotFound)
         }
     }
 }

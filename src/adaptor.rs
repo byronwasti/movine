@@ -2,11 +2,11 @@ use crate::errors::Result;
 use crate::migration::Migration;
 use crate::plan_builder::Step;
 
-mod pg_adaptor;
-mod sqlite_adaptor;
+mod postgres;
+mod sqlite;
 
-pub use pg_adaptor::{PostgresAdaptor, PostgresParams};
-pub use sqlite_adaptor::{SqliteAdaptor, SqliteParams};
+pub use self::postgres::{PostgresAdaptor};
+pub use sqlite::{SqliteAdaptor};
 
 pub trait DbAdaptor {
     fn init_up_sql(&self) -> &'static str;
