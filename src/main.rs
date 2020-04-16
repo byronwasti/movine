@@ -1,6 +1,5 @@
-use movine::adaptor;
 use movine::cli::Opt;
-use movine::config;
+use movine::config::Config;
 use movine::errors::Result;
 use movine::logger;
 use movine::Movine;
@@ -15,9 +14,9 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-    let config = config::load_config()?;
-    let adaptor = adaptor::get_adaptor(&config)?;
-    let mut movine = Movine::new(adaptor);
+    let config = Config::from_file(&"movine.toml")?;
+    let adaptor = config.into_adaptor()?;
+    let mut movine = Movine::new(adaptor, &"./migrations");
     match Opt::from_args() {
         Opt::Init {} => movine.initialize(),
         Opt::Generate { name } => movine.generate(&name),

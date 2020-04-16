@@ -93,6 +93,10 @@ impl<'a> PlanBuilder<'a> {
 
         let plan_down: Vec<_> = matches_to_fix
             .iter()
+            .filter(|x| match x {
+                Matching::Pending(_) => false,
+                _ => true,
+            })
             .map(|x| (Step::Down, x.get_best_down_migration()))
             .rev()
             .collect();
@@ -253,6 +257,70 @@ mod tests {
                 (Step::Up, &local[2]),
             ]
         )
+    }
+
+    #[test]
+    fn test_fix_2() {
+        let local = [
+            Migration::new(&"test"),
+            Migration::new(&"test_1"),
+            Migration::new(&"test_2"),
+        ];
+        let db = [
+            Migration::new(&"test"),
+            Migration::new_with_hash(&"test_1", &"hash"),
+            Migration::new(&"test_2"),
+            Migration::new(&"test_3"),
+        ];
+        let plan = PlanBuilder::new()
+            .local_migrations(&local)
+            .db_migrations(&db)
+            .fix()
+            .unwrap();
+        assert_eq!(
+            plan,
+            [
+                (Step::Down, &db[3]),
+                (Step::Down, &local[2]),
+                (Step::Down, &local[1]),
+                (Step::Up, &local[1]),
+                (Step::Up, &local[2]),
+            ]
+        )
+    }
+
+    #[test]
+    fn test_fix_3() {
+        let local = [
+            Migration::new(&"test_0"),
+            Migration::new(&"test_1"),
+            Migration::new(&"test_2"),
+            Migration::new(&"test_3"),
+            Migration::new(&"test_4"),
+        ];
+        let db = [
+            Migration::new(&"test_0"),
+            Migration::new_with_hash(&"test_1", &"hash"),
+            Migration::new(&"test_2"),
+            Migration::new(&"test_3b"),
+            Migration::new(&"test_4"),
+        ];
+        let actual = PlanBuilder::new()
+            .local_migrations(&local)
+            .db_migrations(&db)
+            .fix()
+            .unwrap();
+        let expected = [
+                (Step::Down, &local[4]),
+                (Step::Down, &db[3]),
+                (Step::Down, &local[2]),
+                (Step::Down, &local[1]),
+                (Step::Up, &local[1]),
+                (Step::Up, &local[2]),
+                (Step::Up, &local[3]),
+                (Step::Up, &local[4]),
+            ];
+        assert_eq!(actual, expected)
     }
 
     #[test]

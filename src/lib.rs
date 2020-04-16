@@ -13,6 +13,7 @@ mod match_maker;
 mod migration;
 mod plan_builder;
 
+pub use config::Config;
 use adaptor::DbAdaptor;
 use errors::Result;
 use file_handler::FileHandler;
@@ -25,10 +26,10 @@ pub struct Movine {
 }
 
 impl Movine {
-    pub fn new(adaptor: Box<dyn DbAdaptor>) -> Self {
+    pub fn new(adaptor: Box<dyn DbAdaptor>, migration_dir: &str) -> Self {
         Self {
             adaptor,
-            file_handler: FileHandler::new(&"./migrations"),
+            file_handler: FileHandler::new(migration_dir),
         }
     }
 

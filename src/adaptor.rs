@@ -1,33 +1,12 @@
-use crate::config::Config;
-use crate::errors::{Error, Result};
+use crate::errors::{Result};
 use crate::migration::Migration;
 use crate::plan_builder::Step;
 
 mod pg_adaptor;
 mod sqlite_adaptor;
 
-use pg_adaptor::PostgresAdaptor;
-use sqlite_adaptor::SqliteAdaptor;
-
-pub fn get_adaptor(config: &Config) -> Result<Box<dyn DbAdaptor>> {
-    match config {
-        Config {
-            postgres: Some(params),
-            ..
-        } => {
-            let pg = PostgresAdaptor::new(&params)?;
-            Ok(Box::new(pg))
-        }
-        Config {
-            sqlite: Some(params),
-            ..
-        } => {
-            let sqlite = SqliteAdaptor::new(&params)?;
-            Ok(Box::new(sqlite))
-        }
-        _ => Err(Error::AdaptorNotFound),
-    }
-}
+pub use pg_adaptor::PostgresAdaptor;
+pub use sqlite_adaptor::SqliteAdaptor;
 
 pub trait DbAdaptor {
     fn init_up_sql(&self) -> &'static str;
