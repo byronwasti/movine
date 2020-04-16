@@ -25,19 +25,16 @@ The first step to get started with Movine is to set up the `movine.toml`. This f
 
 ```
 # movine.toml
-[meta]
-database="postgres"
-# database="sqlite"
-
-[connection]
+[postgres]
 host = {host} 
 database = {db} 
 user = {username}
 password = {pass}
 port = {port}
 
-## If using Sqlite adaptor:
-# path={file}
+## Or use the Sqlite adaptor
+[sqlite]
+file={file}
 ```
 
 Next, you can run the `init` command to set everything up, the `generate` command to create your first migration, and once those are written you can run `up` to apply them.

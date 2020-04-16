@@ -2,6 +2,7 @@ use postgres;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use crate::plan_builder::Step;
+use crate::config::PostgresParams;
 use std::collections::HashMap;
 use crate::adaptor::DbAdaptor;
 
@@ -10,30 +11,14 @@ pub struct PostgresAdaptor {
 }
 
 impl PostgresAdaptor {
-    pub fn new(params: &HashMap<String, String>) -> Result<Self> {
-        let port = params
-            .get(&"port".to_string())
-            .ok_or_else(|| Error::MissingConnectionParam("port".to_string()))?;
-        let database = params
-            .get(&"database".to_string())
-            .ok_or_else(|| Error::MissingConnectionParam("database".to_string()))?;
-        let username = params
-            .get(&"username".to_string())
-            .ok_or_else(|| Error::MissingConnectionParam("username".to_string()))?;
-        let password = params
-            .get(&"password".to_string())
-            .ok_or_else(|| Error::MissingConnectionParam("password".to_string()))?;
-        let host = params
-            .get(&"host".to_string())
-            .ok_or_else(|| Error::MissingConnectionParam("host".to_string()))?;
-
+    pub fn new(params: &PostgresParams) -> Result<Self> {
         let connection_params = format!(
             "postgresql://{user}:{password}@{host}:{port}/{database}",
-            user = username,
-            password = password,
-            host = host,
-            port = port,
-            database = database,
+            user = params.username,
+            password = params.password,
+            host = params.host,
+            port = params.port,
+            database = params.database,
         );
         let conn = postgres::Connection::connect(connection_params, postgres::TlsMode::None)?;
         Ok(Self { conn })

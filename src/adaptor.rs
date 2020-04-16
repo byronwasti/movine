@@ -1,6 +1,7 @@
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use crate::plan_builder::Step;
+use crate::config::Config;
 use std::collections::HashMap;
 
 mod pg_adaptor;
@@ -9,17 +10,17 @@ mod sqlite_adaptor;
 use pg_adaptor::PostgresAdaptor;
 use sqlite_adaptor::SqliteAdaptor;
 
-pub fn get_adaptor(database: &str, connection: &HashMap<String, String>) -> Result<Box<dyn DbAdaptor>> {
-    match database {
-        "postgres" => {
-            let pg = PostgresAdaptor::new(connection)?;
+pub fn get_adaptor(config: &Config) -> Result<Box<dyn DbAdaptor>> {
+    match config {
+        Config { postgres: Some(params), ..} => {
+            let pg = PostgresAdaptor::new(&params)?;
             Ok(Box::new(pg))
         }
-        "sqlite" => {
-            let sqlite = SqliteAdaptor::new(connection)?;
+        Config { sqlite: Some(params), ..} => {
+            let sqlite = SqliteAdaptor::new(&params)?;
             Ok(Box::new(sqlite))
         }
-        x => Err(Error::AdaptorNotFound(x.to_string())),
+        _ => Err(Error::AdaptorNotFound),
     }
 }
 

@@ -2,6 +2,7 @@ use rusqlite::{params, Connection}; //::{params, Connection, Result};
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use crate::plan_builder::Step;
+use crate::config::SqliteParams;
 use std::collections::HashMap;
 use crate::adaptor::DbAdaptor;
 
@@ -10,11 +11,8 @@ pub struct SqliteAdaptor {
 }
 
 impl SqliteAdaptor {
-    pub fn new(params: &HashMap<String, String>) -> Result<Self> {
-        let path = params
-            .get(&"path".to_string())
-            .ok_or_else(|| Error::MissingConnectionParam("path".to_string()))?;
-        let conn = Connection::open(&path)?;
+    pub fn new(params: &SqliteParams) -> Result<Self> {
+        let conn = Connection::open(&params.file)?;
         Ok(Self { conn })
     }
 }

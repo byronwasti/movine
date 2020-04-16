@@ -15,11 +15,20 @@ pub fn load_config() -> Result<Config> {
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub meta: Meta,
-    pub connection: HashMap<String, String>,
+    pub postgres: Option<PostgresParams>,
+    pub sqlite: Option<SqliteParams>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Meta {
+pub struct PostgresParams {
+    pub username: String,
+    pub password: String,
+    pub host: String,
     pub database: String,
+    pub port: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SqliteParams {
+    pub file: String,
 }

@@ -48,7 +48,7 @@ fn run() -> Result<()> {
 fn initialize() -> Result<()> {
     let config = config::load_config()?;
     helpers::create_migration_directory()?;
-    let mut adaptor = adaptor::get_adaptor(&config.meta.database, &config.connection)?;
+    let mut adaptor = adaptor::get_adaptor(&config)?;
     let up_sql = adaptor.init_up_sql();
     let down_sql = adaptor.init_down_sql();
 
@@ -82,7 +82,7 @@ fn generate(name: &str) -> Result<()> {
 
 fn status() -> Result<()> {
     let config = config::load_config()?;
-    let mut adaptor = adaptor::get_adaptor(&config.meta.database, &config.connection)?;
+    let mut adaptor = adaptor::get_adaptor(&config)?;
     let local_migrations = helpers::load_local_migrations()?;
     let db_migrations = adaptor.load_migrations()?;
 
@@ -97,7 +97,7 @@ fn status() -> Result<()> {
 
 fn up(number: Option<usize>, show_plan: bool) -> Result<()> {
     let config = config::load_config()?;
-    let mut adaptor = adaptor::get_adaptor(&config.meta.database, &config.connection)?;
+    let mut adaptor = adaptor::get_adaptor(&config)?;
     let local_migrations = helpers::load_local_migrations()?;
     let db_migrations = adaptor.load_migrations()?;
 
@@ -117,7 +117,7 @@ fn up(number: Option<usize>, show_plan: bool) -> Result<()> {
 
 fn down(number: Option<usize>, show_plan: bool, _ignore_divergent: bool) -> Result<()> {
     let config = config::load_config()?;
-    let mut adaptor = adaptor::get_adaptor(&config.meta.database, &config.connection)?;
+    let mut adaptor = adaptor::get_adaptor(&config)?;
     let local_migrations = helpers::load_local_migrations()?;
     let db_migrations = adaptor.load_migrations()?;
 
@@ -137,7 +137,7 @@ fn down(number: Option<usize>, show_plan: bool, _ignore_divergent: bool) -> Resu
 
 fn fix(show_plan: bool) -> Result<()> {
     let config = config::load_config()?;
-    let mut adaptor = adaptor::get_adaptor(&config.meta.database, &config.connection)?;
+    let mut adaptor = adaptor::get_adaptor(&config)?;
     let local_migrations = helpers::load_local_migrations()?;
     let db_migrations = adaptor.load_migrations()?;
 
@@ -156,7 +156,7 @@ fn fix(show_plan: bool) -> Result<()> {
 
 fn redo(number: Option<usize>, show_plan: bool) -> Result<()> {
     let config = config::load_config()?;
-    let mut adaptor = adaptor::get_adaptor(&config.meta.database, &config.connection)?;
+    let mut adaptor = adaptor::get_adaptor(&config)?;
     let local_migrations = helpers::load_local_migrations()?;
     let db_migrations = adaptor.load_migrations()?;
 
