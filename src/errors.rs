@@ -1,4 +1,5 @@
 use postgres::error::Error as PostgresError;
+use rusqlite::Error as SqliteError;
 use std::fmt;
 use std::io;
 use toml::de::Error as TomlError;
@@ -10,25 +11,27 @@ pub enum Error {
     ConfigFileNotFound,
     BadMigration,
     Unknown,
-    MissingParams(String),
+    MissingConnectionParam(String),
     AdaptorNotFound(String),
     IoError(io::Error),
     TomlError(TomlError),
     PgError(PostgresError),
+    SqliteError(SqliteError),
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use Error::*;
         match self {
-            ConfigFileNotFound => write!(f, "Config file not found."),
+            ConfigFileNotFound => write!(f, "`movine.toml` config file not found."),
             BadMigration => write!(f, "Error parsing migrations."),
             Unknown => write!(f, "Unknown error occurred"),
-            MissingParams(s) => write!(f, "Missing param {}", s),
+            MissingConnectionParam(s) => write!(f, "Missing [connection] param \"{}\"", s),
             AdaptorNotFound(db) => write!(f, "Could not find adaptor for {}", db),
             IoError(e) => write!(f, "IO Error: {}", e),
             TomlError(e) => write!(f, "Unable to read config file: {}", e),
             PgError(e) => write!(f, "Error in Postgres: {}", e),
+            SqliteError(e) => write!(f, "Error in Sqlite: {}", e),
         }
     }
 }
@@ -48,5 +51,11 @@ impl From<TomlError> for Error {
 impl From<PostgresError> for Error {
     fn from(error: PostgresError) -> Self {
         Error::PgError(error)
+    }
+}
+
+impl From<SqliteError> for Error {
+    fn from(error: SqliteError) -> Self {
+        Error::SqliteError(error)
     }
 }

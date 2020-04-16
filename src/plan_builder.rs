@@ -62,10 +62,11 @@ impl<'a> PlanBuilder<'a> {
                     Matching::Applied(x) => x,
                     Matching::Divergent(x) => x,
                     Matching::Variant(x, y) => {
-                        if y.down_sql.is_some() {
-                            y
-                        } else {
+                        if x.down_sql.is_some() {
+                            // TODO: Have some output explaining why we default to local
                             x
+                        } else {
+                            y
                         }
                     }
                     _ => unreachable!(),

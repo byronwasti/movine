@@ -1,47 +1,31 @@
+use postgres;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use crate::plan_builder::Step;
-use postgres;
 use std::collections::HashMap;
-
-pub fn get_adaptor(database: &str, connection: &HashMap<String, String>) -> Result<impl DbAdaptor> {
-    match database {
-        "postgres" => {
-            let pg = PostgresAdaptor::new(connection)?;
-            Ok(pg)
-        }
-        x => Err(Error::AdaptorNotFound(x.to_string())),
-    }
-}
-
-pub trait DbAdaptor {
-    fn init_up_sql(&self) -> &'static str;
-    fn init_down_sql(&self) -> &'static str;
-    fn load_migrations(&self) -> Result<Vec<Migration>>;
-    fn run_migration_plan(&self, plan: &[(Step, &Migration)]) -> Result<()>;
-}
+use crate::adaptor::DbAdaptor;
 
 pub struct PostgresAdaptor {
     conn: postgres::Connection,
 }
 
 impl PostgresAdaptor {
-    fn new(params: &HashMap<String, String>) -> Result<Self> {
+    pub fn new(params: &HashMap<String, String>) -> Result<Self> {
         let port = params
             .get(&"port".to_string())
-            .ok_or_else(|| Error::MissingParams("port".to_string()))?;
+            .ok_or_else(|| Error::MissingConnectionParam("port".to_string()))?;
         let database = params
             .get(&"database".to_string())
-            .ok_or_else(|| Error::MissingParams("database".to_string()))?;
+            .ok_or_else(|| Error::MissingConnectionParam("database".to_string()))?;
         let username = params
             .get(&"username".to_string())
-            .ok_or_else(|| Error::MissingParams("username".to_string()))?;
+            .ok_or_else(|| Error::MissingConnectionParam("username".to_string()))?;
         let password = params
             .get(&"password".to_string())
-            .ok_or_else(|| Error::MissingParams("password".to_string()))?;
+            .ok_or_else(|| Error::MissingConnectionParam("password".to_string()))?;
         let host = params
             .get(&"host".to_string())
-            .ok_or_else(|| Error::MissingParams("host".to_string()))?;
+            .ok_or_else(|| Error::MissingConnectionParam("host".to_string()))?;
 
         let connection_params = format!(
             "postgresql://{user}:{password}@{host}:{port}/{database}",
@@ -87,7 +71,7 @@ impl DbAdaptor for PostgresAdaptor {
         Ok(migrations)
     }
 
-    fn run_migration_plan(&self, plan: &[(Step, &Migration)]) -> Result<()> {
+    fn run_migration_plan(&mut self, plan: &[(Step, &Migration)]) -> Result<()> {
         for (step, migration) in plan {
             match step {
                 Step::Up => {

@@ -52,7 +52,7 @@ pub enum Opt {
     },
 
     #[structopt(name = "custom")]
-    /// UNIMPLEMENTED
+    /// [unimplemented]
     Custom {
         #[structopt(short = "p", long = "plan")]
         /// Do a dry run and show the migration plan.
