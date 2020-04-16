@@ -5,8 +5,8 @@ use crate::plan_builder::Step;
 mod pg_adaptor;
 mod sqlite_adaptor;
 
-pub use pg_adaptor::PostgresAdaptor;
-pub use sqlite_adaptor::SqliteAdaptor;
+pub use pg_adaptor::{PostgresAdaptor, PostgresParams};
+pub use sqlite_adaptor::{SqliteAdaptor, SqliteParams};
 
 pub trait DbAdaptor {
     fn init_up_sql(&self) -> &'static str;

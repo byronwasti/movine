@@ -1,9 +1,18 @@
 use crate::adaptor::DbAdaptor;
-use crate::config::PostgresParams;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use crate::plan_builder::Step;
 use postgres;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+pub struct PostgresParams {
+    pub username: String,
+    pub password: String,
+    pub host: String,
+    pub database: String,
+    pub port: i32,
+}
 
 pub struct PostgresAdaptor {
     conn: postgres::Connection,

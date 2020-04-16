@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+use structopt::StructOpt;
 
 pub mod adaptor;
 pub mod cli;
@@ -12,22 +13,39 @@ mod migration;
 mod plan_builder;
 
 use adaptor::DbAdaptor;
-pub use config::Config;
+use cli::Opt;
 use errors::Result;
 use file_handler::FileHandler;
 use migration::MigrationBuilder;
 use plan_builder::PlanBuilder;
 
-pub struct Movine {
-    adaptor: Box<dyn DbAdaptor>,
+pub struct Movine<T: DbAdaptor> {
+    adaptor: T,
     file_handler: FileHandler,
 }
 
-impl Movine {
-    pub fn new(adaptor: Box<dyn DbAdaptor>, migration_dir: &str) -> Self {
+impl<T: DbAdaptor> Movine<T> {
+    pub fn new(adaptor: T, migration_dir: &str) -> Self {
         Self {
             adaptor,
             file_handler: FileHandler::new(migration_dir),
+        }
+    }
+
+    pub fn run_from_args(&mut self) -> Result<()> {
+        match Opt::from_args() {
+            Opt::Init {} => self.initialize(),
+            Opt::Generate { name } => self.generate(&name),
+            Opt::Status {} => self.status(),
+            Opt::Up { number, show_plan } => self.up(number, show_plan),
+            Opt::Down {
+                number,
+                show_plan,
+                ignore_divergent,
+            } => self.down(number, show_plan, ignore_divergent),
+            Opt::Redo { number, show_plan } => self.redo(number, show_plan),
+            Opt::Fix { show_plan } => self.fix(show_plan),
+            _ => unimplemented!(),
         }
     }
 

@@ -1,4 +1,4 @@
-use crate::adaptor::{DbAdaptor, PostgresAdaptor, SqliteAdaptor};
+use crate::adaptor::{PostgresAdaptor, PostgresParams, SqliteAdaptor, SqliteParams};
 use crate::errors::{Error, Result};
 use serde::Deserialize;
 use std::fs::File;
@@ -20,65 +20,22 @@ impl Config {
         Ok(config)
     }
 
-    pub fn from_postgres_params(
-        username: &str,
-        password: &str,
-        host: &str,
-        database: &str,
-        port: i32,
-    ) -> Self {
-        let pg_params = PostgresParams {
-            username: username.into(),
-            password: password.into(),
-            host: host.into(),
-            database: database.into(),
-            port,
-        };
-        Self {
-            postgres: Some(pg_params),
-            sqlite: None,
-        }
-    }
-
-    pub fn from_sqlite_params(file: &str) -> Self {
-        let sqlite = SqliteParams { file: file.into() };
-        Self {
-            postgres: None,
-            sqlite: Some(sqlite),
-        }
-    }
-
-    pub fn into_adaptor(&self) -> Result<Box<dyn DbAdaptor>> {
+    pub fn into_adaptor(self) -> Result<Adaptor> {
         match self {
             Config {
                 postgres: Some(params),
                 ..
-            } => {
-                let pg = PostgresAdaptor::new(&params)?;
-                Ok(Box::new(pg))
-            }
+            } => Ok(Adaptor::Postgres(PostgresAdaptor::new(&params)?)),
             Config {
                 sqlite: Some(params),
                 ..
-            } => {
-                let sqlite = SqliteAdaptor::new(&params)?;
-                Ok(Box::new(sqlite))
-            }
+            } => Ok(Adaptor::Sqlite(SqliteAdaptor::new(&params)?)),
             _ => Err(Error::AdaptorNotFound),
         }
     }
 }
 
-#[derive(Debug, Deserialize)]
-pub struct PostgresParams {
-    pub username: String,
-    pub password: String,
-    pub host: String,
-    pub database: String,
-    pub port: i32,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct SqliteParams {
-    pub file: String,
+pub enum Adaptor {
+    Postgres(PostgresAdaptor),
+    Sqlite(SqliteAdaptor),
 }
