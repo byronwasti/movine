@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::errors::{Error, Result};
-use crate::migration::{Migration};
+use crate::migration::Migration;
 use crate::plan_builder::Step;
 
 mod pg_adaptor;
