@@ -82,20 +82,22 @@ impl<'a> PlanBuilder<'a> {
 
     pub fn fix(self) -> Result<Plan<'a>> {
         let matches = self.get_matches()?;
-        let filtered_matches: Vec<_> = matches
-            .iter()
-            .filter(|x| match x {
-                Matching::Divergent(_) | Matching::Variant(_, _) => true,
-                _ => false,
-            }).collect();
 
-        let plan_down: Vec<_> = filtered_matches
+        let matches_to_fix: Vec<_> = matches
+            .iter()
+            .skip_while(|x| match x {
+                Matching::Divergent(_) | Matching::Variant(_, _) => false,
+                _ => true,
+            })
+            .collect();
+
+        let plan_down: Vec<_> = matches_to_fix
             .iter()
             .map(|x| (Step::Down, x.get_best_down_migration()))
             .rev()
             .collect();
 
-        let mut plan_up: Vec<_> = filtered_matches
+        let mut plan_up: Vec<_> = matches_to_fix
             .iter()
             .filter_map(|x| x.get_local_migration())
             .map(|x| (Step::Up, x))
@@ -113,7 +115,8 @@ impl<'a> PlanBuilder<'a> {
             .filter(|x| match x {
                 Matching::Applied(_) | Matching::Variant(_, _) => true,
                 _ => false,
-            }).collect();
+            })
+            .collect();
 
         let plan_down: Vec<_> = filtered_matches
             .iter()
@@ -193,7 +196,8 @@ mod tests {
         let plan = PlanBuilder::new()
             .local_migrations(&local)
             .db_migrations(&db)
-            .up().unwrap();
+            .up()
+            .unwrap();
         assert_eq!(plan, [(Step::Up, &local[0])])
     }
 
@@ -204,7 +208,8 @@ mod tests {
         let plan = PlanBuilder::new()
             .local_migrations(&local)
             .db_migrations(&db)
-            .up().unwrap();
+            .up()
+            .unwrap();
         assert_eq!(plan, [(Step::Up, &local[1])])
     }
 
@@ -215,7 +220,8 @@ mod tests {
         let plan = PlanBuilder::new()
             .local_migrations(&local)
             .db_migrations(&db)
-            .down().unwrap();
+            .down()
+            .unwrap();
         assert_eq!(plan, [(Step::Down, &db[1])])
     }
 
@@ -224,18 +230,19 @@ mod tests {
         let local = [
             Migration::new(&"test"),
             Migration::new(&"test_1"),
-            Migration::new(&"test_2")
+            Migration::new(&"test_2"),
         ];
         let db = [
             Migration::new(&"test"),
             Migration::new_with_hash(&"test_1", &"hash"),
             Migration::new_with_hash(&"test_2", &"hash"),
-            Migration::new(&"test_3")
+            Migration::new(&"test_3"),
         ];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
             .db_migrations(&db)
-            .fix().unwrap();
+            .fix()
+            .unwrap();
         assert_eq!(
             plan,
             [
@@ -244,7 +251,8 @@ mod tests {
                 (Step::Down, &local[1]),
                 (Step::Up, &local[1]),
                 (Step::Up, &local[2]),
-            ])
+            ]
+        )
     }
 
     #[test]
@@ -253,13 +261,14 @@ mod tests {
         let db = [
             Migration::new(&"test"),
             Migration::new_with_hash(&"test_2", &"hash_1"),
-            Migration::new(&"test_3")
+            Migration::new(&"test_3"),
         ];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
             .db_migrations(&db)
             .count(Some(2))
-            .redo().unwrap();
+            .redo()
+            .unwrap();
         assert_eq!(
             plan,
             [
@@ -267,6 +276,7 @@ mod tests {
                 (Step::Down, &local[0]),
                 (Step::Up, &local[0]),
                 (Step::Up, &local[1]),
-            ])
+            ]
+        )
     }
 }

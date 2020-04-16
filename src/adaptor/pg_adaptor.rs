@@ -1,10 +1,9 @@
-use postgres;
+use crate::adaptor::DbAdaptor;
+use crate::config::PostgresParams;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use crate::plan_builder::Step;
-use crate::config::PostgresParams;
-use std::collections::HashMap;
-use crate::adaptor::DbAdaptor;
+use postgres;
 
 pub struct PostgresAdaptor {
     conn: postgres::Connection,
@@ -62,7 +61,10 @@ impl DbAdaptor for PostgresAdaptor {
                 Step::Up => {
                     let name = &migration.name;
                     let hash = migration.hash.as_ref().ok_or_else(|| Error::BadMigration)?;
-                    let up_sql = migration.up_sql.as_ref().ok_or_else(|| Error::BadMigration)?;
+                    let up_sql = migration
+                        .up_sql
+                        .as_ref()
+                        .ok_or_else(|| Error::BadMigration)?;
                     let empty_string = "".to_string();
                     let down_sql = migration.down_sql.as_ref().unwrap_or_else(|| &empty_string);
 
@@ -73,7 +75,10 @@ impl DbAdaptor for PostgresAdaptor {
                 }
                 Step::Down => {
                     let name = &migration.name;
-                    let down_sql = migration.down_sql.as_ref().ok_or_else(|| Error::BadMigration)?;
+                    let down_sql = migration
+                        .down_sql
+                        .as_ref()
+                        .ok_or_else(|| Error::BadMigration)?;
 
                     let transaction = self.conn.transaction()?;
                     transaction.batch_execute(&down_sql)?;

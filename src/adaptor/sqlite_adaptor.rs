@@ -1,10 +1,9 @@
-use rusqlite::{params, Connection}; //::{params, Connection, Result};
+use crate::adaptor::DbAdaptor;
+use crate::config::SqliteParams;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use crate::plan_builder::Step;
-use crate::config::SqliteParams;
-use std::collections::HashMap;
-use crate::adaptor::DbAdaptor;
+use rusqlite::{params, Connection}; //::{params, Connection, Result};
 
 pub struct SqliteAdaptor {
     conn: Connection,
@@ -34,10 +33,8 @@ impl DbAdaptor for SqliteAdaptor {
             ORDER BY created_at DESC;
         ";
         let mut stmt = self.conn.prepare(&sql)?;
-        let rows: std::result::Result<Vec<(String, String, String)>, _> = 
-            stmt.query_map(params![], |row| {
-                Ok((row.get(0)?, row.get(1)?, row.get(2)?))
-            })?
+        let rows: std::result::Result<Vec<(String, String, String)>, _> = stmt
+            .query_map(params![], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
             .collect();
         let rows: Vec<(String, String, String)> = rows.unwrap();
 
@@ -61,7 +58,10 @@ impl DbAdaptor for SqliteAdaptor {
                 Step::Up => {
                     let name = &migration.name;
                     let hash = migration.hash.as_ref().ok_or_else(|| Error::BadMigration)?;
-                    let up_sql = migration.up_sql.as_ref().ok_or_else(|| Error::BadMigration)?;
+                    let up_sql = migration
+                        .up_sql
+                        .as_ref()
+                        .ok_or_else(|| Error::BadMigration)?;
                     let empty_string = "".to_string();
                     let down_sql = migration.down_sql.as_ref().unwrap_or_else(|| &empty_string);
 
@@ -72,7 +72,10 @@ impl DbAdaptor for SqliteAdaptor {
                 }
                 Step::Down => {
                     let name = &migration.name;
-                    let down_sql = migration.down_sql.as_ref().ok_or_else(|| Error::BadMigration)?;
+                    let down_sql = migration
+                        .down_sql
+                        .as_ref()
+                        .ok_or_else(|| Error::BadMigration)?;
 
                     let transaction = self.conn.transaction()?;
                     transaction.execute(&down_sql, params![])?;

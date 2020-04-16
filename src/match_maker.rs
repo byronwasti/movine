@@ -1,6 +1,6 @@
-use crate::migration::{Migration};
+use crate::migration::Migration;
 use std::cmp::Ordering;
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
 pub fn find_matches<'a>(
     local_migrations: &'a [Migration],

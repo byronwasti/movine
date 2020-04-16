@@ -14,10 +14,9 @@ mod match_maker;
 mod migration;
 mod plan_builder;
 
-use adaptor::DbAdaptor;
 use cli::Opt;
-use errors::{Result};
-use migration::{MigrationBuilder};
+use errors::Result;
+use migration::MigrationBuilder;
 use plan_builder::PlanBuilder;
 
 fn main() {
@@ -82,7 +81,7 @@ fn generate(name: &str) -> Result<()> {
 
 fn status() -> Result<()> {
     let config = config::load_config()?;
-    let mut adaptor = adaptor::get_adaptor(&config)?;
+    let adaptor = adaptor::get_adaptor(&config)?;
     let local_migrations = helpers::load_local_migrations()?;
     let db_migrations = adaptor.load_migrations()?;
 
