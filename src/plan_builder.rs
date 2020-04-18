@@ -120,21 +120,21 @@ impl<'a> PlanBuilder<'a> {
                 Matching::Applied(_) | Matching::Variant(_, _) => true,
                 _ => false,
             })
+            .rev()
+            .take(self.count.unwrap_or(1))
             .collect();
 
         let plan_down: Vec<_> = filtered_matches
             .iter()
             // Unwrap is safe since it won't be a Divergent matching
             .map(|x| (Step::Down, x.get_local_migration().unwrap()))
-            .rev()
-            .take(self.count.unwrap_or(1))
             .collect();
 
         let mut plan_up: Vec<_> = filtered_matches
             .iter()
             // Unwrap is safe since it won't be a Divergent matching
             .map(|x| (Step::Up, x.get_local_migration().unwrap()))
-            .take(self.count.unwrap_or(1))
+            .rev()
             .collect();
 
         let mut plan = plan_down;
@@ -325,21 +325,14 @@ mod tests {
 
     #[test]
     fn test_fix_4() {
-        let local = [
-            Migration::new(&"test_0"),
-            Migration::new(&"test_1"),
-        ];
-        let db = [
-            Migration::new(&"test_0"),
-        ];
+        let local = [Migration::new(&"test_0"), Migration::new(&"test_1")];
+        let db = [Migration::new(&"test_0")];
         let actual = PlanBuilder::new()
             .local_migrations(&local)
             .db_migrations(&db)
             .fix()
             .unwrap();
-        let expected = [
-            (Step::Up, &local[1]),
-        ];
+        let expected = [(Step::Up, &local[1])];
         assert_eq!(actual, expected)
     }
 
@@ -364,6 +357,36 @@ mod tests {
                 (Step::Down, &local[0]),
                 (Step::Up, &local[0]),
                 (Step::Up, &local[1]),
+            ]
+        )
+    }
+
+    #[test]
+    fn test_redo_2() {
+        let local = [
+            Migration::new(&"test_0"),
+            Migration::new(&"test_1"),
+            Migration::new(&"test_2"),
+        ];
+        let db = [
+            Migration::new(&"test_0"),
+            Migration::new_with_hash(&"test_1", &"hash_1"),
+            Migration::new(&"test_2"),
+            Migration::new(&"test_3"),
+        ];
+        let plan = PlanBuilder::new()
+            .local_migrations(&local)
+            .db_migrations(&db)
+            .count(Some(2))
+            .redo()
+            .unwrap();
+        assert_eq!(
+            plan,
+            [
+                (Step::Down, &local[2]),
+                (Step::Down, &local[1]),
+                (Step::Up, &local[1]),
+                (Step::Up, &local[2]),
             ]
         )
     }

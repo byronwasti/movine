@@ -8,4 +8,3 @@ pub struct PostgresParams {
     pub database: String,
     pub port: i32,
 }
-

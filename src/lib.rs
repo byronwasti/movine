@@ -11,9 +11,9 @@ mod match_maker;
 mod migration;
 mod plan_builder;
 
-pub use config::Config;
 use adaptor::DbAdaptor;
-use errors::Result;
+pub use config::Config;
+use errors::{Error, Result};
 use file_handler::FileHandler;
 use migration::MigrationBuilder;
 use plan_builder::PlanBuilder;
@@ -37,22 +37,22 @@ impl<T: DbAdaptor> Movine<T> {
         }
     }
 
-    pub fn set_migration_dir<'a>(&'a mut self, migration_dir: &str) -> &'a mut Self {
+    pub fn set_migration_dir(&mut self, migration_dir: &str) -> &mut Self {
         self.migration_dir = migration_dir.into();
         self
     }
 
-    pub fn set_number<'a>(&'a mut self, number: Option<usize>) -> &'a mut Self {
+    pub fn set_number(&mut self, number: Option<usize>) -> &mut Self {
         self.number = number;
         self
     }
 
-    pub fn set_show_plan<'a>(&'a mut self, show_plan: bool) -> &'a mut Self {
+    pub fn set_show_plan(&mut self, show_plan: bool) -> &mut Self {
         self.show_plan = show_plan;
         self
     }
 
-    pub fn set_ignore_divergent<'a>(&'a mut self, ignore_divergent: bool) -> &'a mut Self {
+    pub fn set_ignore_divergent(&mut self, ignore_divergent: bool) -> &mut Self {
         self.ignore_divergent = ignore_divergent;
         self
     }
@@ -70,7 +70,11 @@ impl<T: DbAdaptor> Movine<T> {
             .down_sql(&down_sql)
             .build()?;
 
-        file_handler.write_migration(&init_migration)?;
+        match file_handler.write_migration(&init_migration) {
+            Ok(_) => {}
+            Err(Error::IoError(e)) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+            x => x?,
+        }
 
         // Can't just call to `up` function since we are unable to get
         // database migrations until we run this migration.

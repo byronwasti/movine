@@ -8,8 +8,8 @@ use toml;
 mod postgres;
 mod sqlite;
 
-pub use sqlite::SqliteParams;
 pub use self::postgres::PostgresParams;
+pub use sqlite::SqliteParams;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {

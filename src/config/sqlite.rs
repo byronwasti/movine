@@ -4,4 +4,3 @@ use serde::Deserialize; //::{params, Connection, Result};
 pub struct SqliteParams {
     pub file: String,
 }
-

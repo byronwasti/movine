@@ -144,6 +144,7 @@ $ movine status
 ### Redo
 
 The `redo` command will rollback and then re-apply the most recent applied migration or variant migration.
+_Note: If the latest migration is `divergent` then redo will simply skip it. Be careful, and run `fix` if you want to fix `divergent` migrations._
 ```
 $ movine status
 2019-03-17 16:34:51 UTC - Variant   2019-03-17-163451_create_new_table

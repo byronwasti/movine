@@ -1,9 +1,9 @@
 use crate::adaptor::DbAdaptor;
+use crate::config::SqliteParams;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use crate::plan_builder::Step;
 use rusqlite::{params, Connection};
-use crate::config::SqliteParams;
 
 pub struct SqliteAdaptor {
     conn: Connection,
