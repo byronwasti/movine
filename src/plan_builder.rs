@@ -161,7 +161,7 @@ impl<'a> PlanBuilder<'a> {
 
 pub type Plan<'a> = Vec<(Step, &'a Migration)>;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Step {
     Up,
     Down,

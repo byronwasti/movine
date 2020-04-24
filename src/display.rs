@@ -34,23 +34,22 @@ pub fn print_status(matchings: &[Matching]) {
 }
 
 pub fn print_plan(plan: &[(Step, &Migration)]) {
-    let stdout = io::stdout();
-    let mut handle = stdout.lock();
-
-    use Step::*;
-    for (step, migration) in plan.iter() {
-        writeln!(
-            handle,
-            "{color}{step}{reset} - {name}",
-            name = migration.name,
-            step = match step {
-                // Add spaces in front to make them all the same length
-                Up => "  Up",
-                Down => "Down",
-            },
-            color = color::Fg(color::Green),
-            reset = color::Fg(color::Reset),
-        )
-        .unwrap();
+    for step in plan.iter() {
+        print_step(step);
     }
 }
+
+pub fn print_step((step, migration): &(Step, &Migration)) {
+    use Step::*;
+    println!("{color}{step}{reset} - {name}",
+        name = migration.name,
+        step = match step {
+            // Add spaces in front to make them all the same length
+            Up => "  Up",
+            Down => "Down",
+        },
+        color = color::Fg(color::Green),
+        reset = color::Fg(color::Reset),
+    );
+}
+

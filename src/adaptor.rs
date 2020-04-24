@@ -1,6 +1,7 @@
 use crate::errors::Result;
 use crate::migration::Migration;
 use crate::plan_builder::Step;
+use crate::display;
 
 mod postgres;
 mod sqlite;
@@ -17,13 +18,12 @@ pub trait DbAdaptor {
 
     fn run_migration_plan(&mut self, plan: &[(Step, &Migration)]) -> Result<()> {
         for (step, migration) in plan {
+            display::print_step(&(*step, migration));
             match step {
                 Step::Up => {
-                    println!("Running up.sql for {}", &migration.name);
                     self.run_up_migration(&migration)?;
                 }
                 Step::Down => {
-                    println!("Running down.sql for {}", &migration.name);
                     self.run_down_migration(&migration)?;
                 }
             }
