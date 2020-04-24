@@ -2,7 +2,6 @@ use crate::adaptor::DbAdaptor;
 use crate::config::PostgresParams;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
-use crate::plan_builder::Step;
 use postgres;
 
 pub struct PostgresAdaptor {
@@ -68,38 +67,34 @@ impl DbAdaptor for PostgresAdaptor {
         Ok(migrations)
     }
 
-    fn run_migration_plan(&mut self, plan: &[(Step, &Migration)]) -> Result<()> {
-        for (step, migration) in plan {
-            match step {
-                Step::Up => {
-                    let name = &migration.name;
-                    let hash = migration.hash.as_ref().ok_or_else(|| Error::BadMigration)?;
-                    let up_sql = migration
-                        .up_sql
-                        .as_ref()
-                        .ok_or_else(|| Error::BadMigration)?;
-                    let empty_string = "".to_string();
-                    let down_sql = migration.down_sql.as_ref().unwrap_or_else(|| &empty_string);
+    fn run_up_migration(&mut self, migration: &Migration) -> Result<()> {
+        let name = &migration.name;
+        let hash = migration.hash.as_ref().ok_or_else(|| Error::BadMigration)?;
+        let up_sql = migration
+            .up_sql
+            .as_ref()
+            .ok_or_else(|| Error::BadMigration)?;
+        let empty_string = "".to_string();
+        let down_sql = migration.down_sql.as_ref().unwrap_or_else(|| &empty_string);
 
-                    let transaction = self.conn.transaction()?;
-                    transaction.batch_execute(&up_sql)?;
-                    transaction.execute(LOG_UP_MIGRATION, &[&name, &hash, &down_sql])?;
-                    transaction.commit()?;
-                }
-                Step::Down => {
-                    let name = &migration.name;
-                    let down_sql = migration
-                        .down_sql
-                        .as_ref()
-                        .ok_or_else(|| Error::BadMigration)?;
+        let transaction = self.conn.transaction()?;
+        transaction.batch_execute(&up_sql)?;
+        transaction.execute(LOG_UP_MIGRATION, &[&name, &hash, &down_sql])?;
+        transaction.commit()?;
+        Ok(())
+    }
 
-                    let transaction = self.conn.transaction()?;
-                    transaction.batch_execute(&down_sql)?;
-                    transaction.execute(LOG_DOWN_MIGRATION, &[&name])?;
-                    transaction.commit()?;
-                }
-            }
-        }
+    fn run_down_migration(&mut self, migration: &Migration) -> Result<()> {
+        let name = &migration.name;
+        let down_sql = migration
+            .down_sql
+            .as_ref()
+            .ok_or_else(|| Error::BadMigration)?;
+
+        let transaction = self.conn.transaction()?;
+        transaction.batch_execute(&down_sql)?;
+        transaction.execute(LOG_DOWN_MIGRATION, &[&name])?;
+        transaction.commit()?;
         Ok(())
     }
 }

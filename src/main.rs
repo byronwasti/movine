@@ -2,9 +2,10 @@ use movine::adaptor::DbAdaptor;
 use movine::cli::Opt;
 use movine::config::{Adaptor, Config};
 use movine::errors::Result;
-use movine::logger;
 use movine::Movine;
 use structopt::StructOpt;
+
+mod logger;
 
 fn main() {
     logger::init().expect("Could not initialize the logger.");

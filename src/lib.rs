@@ -6,7 +6,6 @@ pub mod config;
 mod display;
 pub mod errors;
 mod file_handler;
-pub mod logger;
 mod match_maker;
 mod migration;
 mod plan_builder;

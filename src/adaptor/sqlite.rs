@@ -2,7 +2,6 @@ use crate::adaptor::DbAdaptor;
 use crate::config::SqliteParams;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
-use crate::plan_builder::Step;
 use rusqlite::{params, Connection};
 
 pub struct SqliteAdaptor {
@@ -56,39 +55,34 @@ impl DbAdaptor for SqliteAdaptor {
         }
         Ok(migrations)
     }
+    fn run_up_migration(&mut self, migration: &Migration) -> Result<()> {
+        let name = &migration.name;
+        let hash = migration.hash.as_ref().ok_or_else(|| Error::BadMigration)?;
+        let up_sql = migration
+            .up_sql
+            .as_ref()
+            .ok_or_else(|| Error::BadMigration)?;
+        let empty_string = "".to_string();
+        let down_sql = migration.down_sql.as_ref().unwrap_or_else(|| &empty_string);
 
-    fn run_migration_plan(&mut self, plan: &[(Step, &Migration)]) -> Result<()> {
-        for (step, migration) in plan {
-            match step {
-                Step::Up => {
-                    let name = &migration.name;
-                    let hash = migration.hash.as_ref().ok_or_else(|| Error::BadMigration)?;
-                    let up_sql = migration
-                        .up_sql
-                        .as_ref()
-                        .ok_or_else(|| Error::BadMigration)?;
-                    let empty_string = "".to_string();
-                    let down_sql = migration.down_sql.as_ref().unwrap_or_else(|| &empty_string);
+        let transaction = self.conn.transaction()?;
+        transaction.execute(&up_sql, params![])?;
+        transaction.execute(LOG_UP_MIGRATION, &[&name, &hash, &down_sql])?;
+        transaction.commit()?;
+        Ok(())
+    }
 
-                    let transaction = self.conn.transaction()?;
-                    transaction.execute(&up_sql, params![])?;
-                    transaction.execute(LOG_UP_MIGRATION, &[&name, &hash, &down_sql])?;
-                    transaction.commit()?;
-                }
-                Step::Down => {
-                    let name = &migration.name;
-                    let down_sql = migration
-                        .down_sql
-                        .as_ref()
-                        .ok_or_else(|| Error::BadMigration)?;
+    fn run_down_migration(&mut self, migration: &Migration) -> Result<()> {
+        let name = &migration.name;
+        let down_sql = migration
+            .down_sql
+            .as_ref()
+            .ok_or_else(|| Error::BadMigration)?;
 
-                    let transaction = self.conn.transaction()?;
-                    transaction.execute(&down_sql, params![])?;
-                    transaction.execute(LOG_DOWN_MIGRATION, &[&name])?;
-                    transaction.commit()?;
-                }
-            }
-        }
+        let transaction = self.conn.transaction()?;
+        transaction.execute(&down_sql, params![])?;
+        transaction.execute(LOG_DOWN_MIGRATION, &[&name])?;
+        transaction.commit()?;
         Ok(())
     }
 }
