@@ -4,7 +4,7 @@
 
 Movine is a simple database migration manager that aims to be compatible with real-world migration work. Many migration managers get confused with complicated development strategies for the migrations. Movine attempts to solve this issue by keeping track of the unique hashes for the `up.sql` and `down.sql` for each migration. This allows users to easily keep track of whether their local migration history matches the one on the database.
 
-This project is currently in *very* early stages, and should be considered a proof-of-concept. The base functionality is implemented, but things should be expected to change. 
+This project is currently in *very* early stages, and should be considered a proof-of-concept. The base functionality is implemented, but things should be expected to change.
 
 Movine does *not* aim to be an ORM. Consider [diesel](http://diesel.rs/) instead if you want an ORM.
 
@@ -20,22 +20,34 @@ Then there are the more complicated ones, which Movine was specifically designed
 - Variant: Found locally but a different version is applied to the database
 - Divergent: Not found locally but applied to the database
 
-## Getting Started 
-The first step to get started with Movine is to set up the `movine.toml`. This file stores the connection parameters that Movine needs in order to connect to the database. In the future this file will also hold various parameters to customize the way Movine operates.
+## Getting Started
 
-```
-# movine.toml
-[postgres]
-host = {host} 
-database = {db} 
-user = {username}
-password = {pass}
-port = {port}
+The first step to get started with Movine is to set the configuration. Configuration can be supplied either through a `movile.toml` file or environment variables:
 
-## Or use the Sqlite adaptor
-[sqlite]
-file={file}
-```
+- **`movine.toml`**
+
+  This file stores the connection parameters that Movine needs in order to connect to the database. In the future this file will also hold   various parameters to customize the way Movine operates.
+
+  ```toml
+  [postgres]
+  host = {host}
+  database = {db}
+  user = {username}
+  password = {pass}
+  port = {port}
+
+  ## Or use the Sqlite adaptor
+  [sqlite]
+  file={file}
+  ```
+
+- **Environment variables**
+
+  You can configure the PostgreSQL adaptor using the environment variables described in the [PostgreSQL documentation](https://www.postgresql.org/docs/current/libpq-envars.html); namely `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD`. All are currently required.
+
+  You can configure the SQLite adaptor using an `SQLITE_FILE` environment variable.
+
+  Movine supports [`.env`](https://github.com/dotenv-rs/dotenv#usage) files as a source of configuration.
 
 Next, you can run the `init` command to set everything up, the `generate` command to create your first migration, and once those are written you can run `up` to apply them.
 ```

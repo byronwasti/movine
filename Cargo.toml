@@ -16,6 +16,8 @@ categories = ["command-line-utilities", "database"]
 [dependencies]
 postgres = "0.15.2"
 chrono = "0.4.6"
+dotenv = "0.15"
+envy = "0.4"
 fern = "0.5.7"
 structopt = "0.2.14"
 toml = "0.4.10"
