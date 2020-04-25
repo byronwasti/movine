@@ -47,6 +47,8 @@ The first step to get started with Movine is to set the configuration. Configura
 
   You can configure the SQLite adaptor using an `SQLITE_FILE` environment variable.
 
+  Movine supports [`.env`](https://github.com/dotenv-rs/dotenv#usage) files as a source of configuration.
+
 Next, you can run the `init` command to set everything up, the `generate` command to create your first migration, and once those are written you can run `up` to apply them.
 ```
 $ movine init

@@ -9,6 +9,7 @@ mod logger;
 
 fn main() {
     logger::init().expect("Could not initialize the logger.");
+    dotenv::dotenv().ok();
     match run() {
         Ok(()) => {}
         Err(e) => println!("Error: {}", e),
