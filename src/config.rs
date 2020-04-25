@@ -26,6 +26,16 @@ impl Config {
         Ok(config)
     }
 
+    pub fn from_env() -> Option<Self> {
+        let postgres = envy::prefixed("PG").from_env().ok();
+        let sqlite = envy::prefixed("SQLITE_").from_env().ok();
+        if postgres.is_none() && sqlite.is_none() {
+            None
+        } else {
+            Some(Config { postgres, sqlite })
+        }
+    }
+
     pub fn into_adaptor(self) -> Result<Adaptor> {
         match self {
             Config {

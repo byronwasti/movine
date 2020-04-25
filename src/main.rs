@@ -16,7 +16,10 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-    let config = Config::from_file(&"movine.toml")?;
+    let config = Config::from_file(&"movine.toml").or_else(|error| match Config::from_env() {
+        Some(config) => Ok(config),
+        None => Err(error),
+    })?;
     let adaptor = config.into_adaptor()?;
     match adaptor {
         Adaptor::Postgres(adaptor) => {
