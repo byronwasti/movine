@@ -1,6 +1,5 @@
-use movine::adaptor::DbAdaptor;
+use movine::adaptor::Adaptor;
 use movine::cli::Opt;
-use movine::config::{Adaptor, Config};
 use movine::errors::Result;
 use movine::Movine;
 use structopt::StructOpt;
@@ -17,24 +16,12 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-    let config = Config::from_file(&"movine.toml").or_else(|error| match Config::from_env() {
-        Some(config) => Ok(config),
-        None => Err(error),
-    })?;
-    let adaptor = config.into_adaptor()?;
-    match adaptor {
-        Adaptor::Postgres(adaptor) => {
-            let mut movine = Movine::new(adaptor);
-            run_from_args(&mut movine)
-        }
-        Adaptor::Sqlite(adaptor) => {
-            let mut movine = Movine::new(adaptor);
-            run_from_args(&mut movine)
-        }
-    }
+    let adaptor = Adaptor::load()?;
+    let mut movine = Movine::new(adaptor);
+    run_from_args(&mut movine)
 }
 
-fn run_from_args<T: DbAdaptor>(movine: &mut Movine<T>) -> Result<()> {
+fn run_from_args(movine: &mut Movine) -> Result<()> {
     match Opt::from_args() {
         Opt::Init {} => movine.initialize(),
         Opt::Generate { name } => movine.generate(&name),

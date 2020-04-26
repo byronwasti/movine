@@ -1,5 +1,4 @@
-use crate::adaptor::DbAdaptor;
-use crate::config::SqliteParams;
+use crate::adaptor::{DbAdaptor, SqliteParams};
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use rusqlite::{params, Connection};

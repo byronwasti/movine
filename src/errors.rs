@@ -8,7 +8,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
+    BadPgConfig(String),
+    BadSqliteConfig(String),
+    ConfigEnvNotDefined,
     ConfigFileNotFound,
+    ConfigNotDefined,
     BadMigration,
     Unknown,
     AdaptorNotFound,
@@ -30,6 +34,7 @@ impl fmt::Display for Error {
             TomlError(e) => write!(f, "Unable to read config file: {}", e),
             PgError(e) => write!(f, "Error in Postgres: {}", e),
             SqliteError(e) => write!(f, "Error in Sqlite: {}", e),
+            _ => todo!(),
         }
     }
 }

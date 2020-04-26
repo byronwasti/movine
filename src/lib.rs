@@ -2,7 +2,6 @@ use chrono::prelude::*;
 
 pub mod adaptor;
 pub mod cli;
-pub mod config;
 mod display;
 pub mod errors;
 mod file_handler;
@@ -11,22 +10,21 @@ mod migration;
 mod plan_builder;
 
 use adaptor::DbAdaptor;
-pub use config::Config;
 use errors::{Error, Result};
 use file_handler::FileHandler;
 use migration::MigrationBuilder;
 use plan_builder::PlanBuilder;
 
-pub struct Movine<T: DbAdaptor> {
-    adaptor: T,
+pub struct Movine {
+    adaptor: Box<dyn DbAdaptor>,
     migration_dir: String,
     number: Option<usize>,
     show_plan: bool,
     ignore_divergent: bool,
 }
 
-impl<T: DbAdaptor> Movine<T> {
-    pub fn new(adaptor: T) -> Self {
+impl Movine {
+    pub fn new(adaptor: Box<dyn DbAdaptor>) -> Self {
         Self {
             adaptor,
             migration_dir: "./migrations".into(),

@@ -21,7 +21,7 @@ envy = "0.4"
 fern = "0.5.7"
 structopt = "0.2.14"
 toml = "0.4.10"
-serde = { version = "1.0.88", features = ["derive"] }
+serde = { version = "1.0.106", features = ["derive"] }
 log = "0.4.6"
 termion = "1.5.1"
 rusqlite = "0.21.0"
