@@ -27,9 +27,13 @@ impl Config {
         let pg = PostgresParams::load(&toml_config);
         let sqlite = SqliteParams::load(&toml_config);
 
-        Ok(Self {
-            postgres: pg.ok(),
-            sqlite: sqlite.ok(),
-        })
+        if pg.is_err() && sqlite.is_err() {
+            Err(Error::ConfigNotDefined)
+        } else {
+            Ok(Self {
+                postgres: pg.ok(),
+                sqlite: sqlite.ok(),
+            })
+        }
     }
 }

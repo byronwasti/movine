@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate log;
+
 use chrono::prelude::*;
 
 pub mod adaptor;
@@ -55,6 +58,7 @@ impl Movine {
     }
 
     pub fn initialize(&mut self) -> Result<()> {
+        info!("Initializing Movine");
         let file_handler = FileHandler::new(&self.migration_dir);
         file_handler.create_migration_directory()?;
         let up_sql = self.adaptor.init_up_sql();
@@ -85,6 +89,7 @@ impl Movine {
     }
 
     pub fn generate(&mut self, name: &str) -> Result<()> {
+        info!("Generating new migration");
         let file_handler = FileHandler::new(&self.migration_dir);
         let new_migration = MigrationBuilder::new()
             .name(name)
@@ -94,6 +99,7 @@ impl Movine {
     }
 
     pub fn status(&mut self) -> Result<()> {
+        info!("Getting status of migrations");
         let file_handler = FileHandler::new(&self.migration_dir);
         let local_migrations = file_handler.load_local_migrations()?;
         let db_migrations = self.adaptor.load_migrations()?;
@@ -108,6 +114,7 @@ impl Movine {
     }
 
     pub fn up(&mut self) -> Result<()> {
+        info!("Running pending migrations");
         let file_handler = FileHandler::new(&self.migration_dir);
         let local_migrations = file_handler.load_local_migrations()?;
         let db_migrations = self.adaptor.load_migrations()?;
@@ -127,6 +134,7 @@ impl Movine {
     }
 
     pub fn down(&mut self) -> Result<()> {
+        info!("Rolling back migrations");
         let file_handler = FileHandler::new(&self.migration_dir);
         let local_migrations = file_handler.load_local_migrations()?;
         let db_migrations = self.adaptor.load_migrations()?;
@@ -146,6 +154,7 @@ impl Movine {
     }
 
     pub fn fix(&mut self) -> Result<()> {
+        info!("Fixing migrations");
         let file_handler = FileHandler::new(&self.migration_dir);
         let local_migrations = file_handler.load_local_migrations()?;
         let db_migrations = self.adaptor.load_migrations()?;

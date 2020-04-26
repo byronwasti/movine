@@ -4,42 +4,77 @@ use movine::errors::Result;
 use movine::Movine;
 use structopt::StructOpt;
 
-mod logger;
-
 fn main() {
-    logger::init().expect("Could not initialize the logger.");
     dotenv::dotenv().ok();
-    match run() {
+    match run_from_args() {
         Ok(()) => {}
-        Err(e) => println!("Error: {}", e),
+        Err(e) => eprintln!("Error: {}", e),
     }
 }
 
-fn run() -> Result<()> {
-    let adaptor = Adaptor::load()?;
-    let mut movine = Movine::new(adaptor);
-    run_from_args(&mut movine)
-}
-
-fn run_from_args(movine: &mut Movine) -> Result<()> {
+fn run_from_args() -> Result<()> {
     match Opt::from_args() {
-        Opt::Init {} => movine.initialize(),
-        Opt::Generate { name } => movine.generate(&name),
-        Opt::Status {} => movine.status(),
-        Opt::Up { number, show_plan } => movine.set_number(number).set_show_plan(show_plan).up(),
+        Opt::Init {debug} => {
+            init_logging(debug);
+            init_movine()?
+                .initialize()
+        },
+        Opt::Generate { name, debug } => {
+            init_logging(debug);
+            init_movine()?
+                .generate(&name)
+        },
+        Opt::Status {debug} => {
+            init_logging(debug);
+            init_movine()?
+                .status()
+        },
+        Opt::Up { number, show_plan, debug } => {
+            init_logging(debug);
+            init_movine()?
+                .set_number(number)
+                .set_show_plan(show_plan)
+                .up()
+        },
         Opt::Down {
             number,
             show_plan,
+            debug,
             ignore_divergent,
-        } => movine
-            .set_number(number)
-            .set_show_plan(show_plan)
-            .set_ignore_divergent(ignore_divergent)
-            .down(),
-        Opt::Redo { number, show_plan } => {
-            movine.set_number(number).set_show_plan(show_plan).redo()
+        } => {
+            init_logging(debug);
+            init_movine()?
+                .set_number(number)
+                .set_show_plan(show_plan)
+                .set_ignore_divergent(ignore_divergent)
+                .down()
         }
-        Opt::Fix { show_plan } => movine.set_show_plan(show_plan).fix(),
+        Opt::Redo { number, show_plan, debug } => {
+            init_logging(debug);
+            init_movine()?
+                .set_number(number)
+                .set_show_plan(show_plan)
+                .redo()
+        }
+        Opt::Fix { show_plan, debug } => {
+            init_logging(debug);
+            init_movine()?
+                .set_show_plan(show_plan)
+                .fix()
+        }
         _ => unimplemented!(),
+    }
+}
+
+fn init_movine() -> Result<Movine> {
+    let adaptor = Adaptor::load()?;
+    Ok(Movine::new(adaptor))
+}
+
+fn init_logging(verbose: bool) {
+    if verbose {
+        env_logger::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    } else {
+        env_logger::from_env(env_logger::Env::default().default_filter_or("warn")).init();
     }
 }
