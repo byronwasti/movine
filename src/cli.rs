@@ -5,7 +5,7 @@ use structopt::StructOpt;
 pub enum Opt {
     #[structopt(name = "status")]
     /// Get the status of migrations (applied, unapplied, mismatched).
-     Status {
+    Status {
         #[structopt(short = "v", long = "verbose")]
         /// Enable verbose logging
         debug: bool,
@@ -87,7 +87,7 @@ pub enum Opt {
 
     #[structopt(name = "generate")]
     /// Generate a migration with a given name.
-    Generate { 
+    Generate {
         name: String,
 
         #[structopt(short = "v", long = "verbose")]

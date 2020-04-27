@@ -1,4 +1,4 @@
-use crate::errors::{Error, Result};
+use crate::errors::{PgParamError, Result};
 use serde::Deserialize;
 use std::convert::{TryFrom, TryInto};
 
@@ -12,7 +12,7 @@ pub struct PostgresParams {
 }
 
 impl PostgresParams {
-    pub fn load(toml_config: &str) -> Result<Self> {
+    pub fn load(toml_config: &str) -> Result<std::result::Result<Self, PgParamError>> {
         let toml_config: RawConfig = toml::from_str(toml_config)?;
         let toml_config = toml_config.postgres;
         let env_config: Option<RawPostgresParams> = envy::prefixed("PG").from_env().ok();
@@ -23,14 +23,14 @@ impl PostgresParams {
             .filter_map(|x| x.take())
             .collect();
 
-        (&configs[..]).try_into()
+        Ok((&configs[..]).try_into())
     }
 }
 
 impl TryFrom<&[RawPostgresParams]> for PostgresParams {
-    type Error = Error;
+    type Error = PgParamError;
 
-    fn try_from(value: &[RawPostgresParams]) -> Result<PostgresParams> {
+    fn try_from(value: &[RawPostgresParams]) -> std::result::Result<PostgresParams, PgParamError> {
         let params = value
             .iter()
             .fold(RawPostgresParams::default(), |mut acc, x| {
@@ -42,23 +42,28 @@ impl TryFrom<&[RawPostgresParams]> for PostgresParams {
                 acc
             });
 
-        Ok(Self {
-            user: params
-                .user
-                .ok_or(Error::BadPgConfig("No user".to_string()))?,
-            password: params
-                .password
-                .ok_or(Error::BadPgConfig("No password".to_string()))?,
-            host: params
-                .host
-                .ok_or(Error::BadPgConfig("No host".to_string()))?,
-            database: params
-                .database
-                .ok_or(Error::BadPgConfig("No database".to_string()))?,
-            port: params
-                .port
-                .ok_or(Error::BadPgConfig("No port".to_string()))?,
-        })
+        match params {
+            RawPostgresParams {
+                user: Some(user),
+                password: Some(password),
+                database: Some(database),
+                host: Some(host),
+                port: Some(port),
+            } => Ok(Self {
+                user,
+                password,
+                host,
+                database,
+                port,
+            }),
+            p => Err(PgParamError {
+                user: p.user.is_some(),
+                password: p.password.is_some(),
+                database: p.database.is_some(),
+                host: p.host.is_some(),
+                port: p.port.is_some(),
+            }),
+        }
     }
 }
 

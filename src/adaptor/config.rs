@@ -1,10 +1,7 @@
-use crate::adaptor::{PostgresAdaptor, SqliteAdaptor};
-use crate::errors::{Error, Result};
+use crate::errors::{ConfigError, Result};
 use serde::Deserialize;
-use std::convert::TryInto;
 use std::fs::File;
 use std::io::Read;
-use toml;
 
 mod pg_params;
 mod sqlite_params;
@@ -20,20 +17,36 @@ pub struct Config {
 
 impl Config {
     pub fn load(file: &str) -> Result<Self> {
-        let mut file = File::open(file).map_err(|_| Error::ConfigFileNotFound)?;
         let mut toml_config = String::new();
-        file.read_to_string(&mut toml_config)?;
+        let file = File::open(file);
+        if let Ok(mut file) = file {
+            file.read_to_string(&mut toml_config)?;
+        }
 
         let pg = PostgresParams::load(&toml_config);
         let sqlite = SqliteParams::load(&toml_config);
 
-        if pg.is_err() && sqlite.is_err() {
-            Err(Error::ConfigNotDefined)
-        } else {
-            Ok(Self {
+        match (pg, sqlite) {
+            (Err(pg_e), Err(_sq_e)) => Err(pg_e),
+            (Ok(Err(pg_e)), Ok(Err(_sq_e))) => {
+                if pg_e.is_partial() {
+                    Err(pg_e.into())
+                } else {
+                    Err(ConfigError::NoConfigFound.into())
+                }
+            }
+            (Ok(pg), Ok(sq)) => Ok(Self {
                 postgres: pg.ok(),
-                sqlite: sqlite.ok(),
-            })
+                sqlite: sq.ok(),
+            }),
+            (Ok(pg), _) => Ok(Self {
+                postgres: pg.ok(),
+                sqlite: None,
+            }),
+            (_, Ok(sq)) => Ok(Self {
+                postgres: None,
+                sqlite: sq.ok(),
+            }),
         }
     }
 }

@@ -14,28 +14,29 @@ fn main() {
 
 fn run_from_args() -> Result<()> {
     match Opt::from_args() {
-        Opt::Init {debug} => {
+        Opt::Init { debug } => {
             init_logging(debug);
-            init_movine()?
-                .initialize()
-        },
+            init_movine()?.initialize()
+        }
         Opt::Generate { name, debug } => {
             init_logging(debug);
-            init_movine()?
-                .generate(&name)
-        },
-        Opt::Status {debug} => {
+            init_movine()?.generate(&name)
+        }
+        Opt::Status { debug } => {
             init_logging(debug);
-            init_movine()?
-                .status()
-        },
-        Opt::Up { number, show_plan, debug } => {
+            init_movine()?.status()
+        }
+        Opt::Up {
+            number,
+            show_plan,
+            debug,
+        } => {
             init_logging(debug);
             init_movine()?
                 .set_number(number)
                 .set_show_plan(show_plan)
                 .up()
-        },
+        }
         Opt::Down {
             number,
             show_plan,
@@ -49,7 +50,11 @@ fn run_from_args() -> Result<()> {
                 .set_ignore_divergent(ignore_divergent)
                 .down()
         }
-        Opt::Redo { number, show_plan, debug } => {
+        Opt::Redo {
+            number,
+            show_plan,
+            debug,
+        } => {
             init_logging(debug);
             init_movine()?
                 .set_number(number)
@@ -58,9 +63,7 @@ fn run_from_args() -> Result<()> {
         }
         Opt::Fix { show_plan, debug } => {
             init_logging(debug);
-            init_movine()?
-                .set_show_plan(show_plan)
-                .fix()
+            init_movine()?.set_show_plan(show_plan).fix()
         }
         _ => unimplemented!(),
     }

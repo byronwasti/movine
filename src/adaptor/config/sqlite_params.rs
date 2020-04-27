@@ -1,6 +1,6 @@
-use crate::errors::{Error, Result};
+use crate::errors::{Result, SqliteParamError};
 use serde::Deserialize;
-use std::convert::{TryInto, TryFrom};
+use std::convert::{TryFrom, TryInto};
 
 #[derive(Debug, Deserialize)]
 pub struct SqliteParams {
@@ -8,35 +8,34 @@ pub struct SqliteParams {
 }
 
 impl SqliteParams {
-    pub fn load(toml_config: &str) -> Result<Self> {
+    pub fn load(toml_config: &str) -> Result<std::result::Result<Self, SqliteParamError>> {
         let toml_config: RawConfig = toml::from_str(toml_config)?;
         let toml_config = toml_config.sqlite;
         let env_config: Option<RawSqliteParams> = envy::prefixed("SQLITE_").from_env().ok();
-
-        // Left-to-right right overrides left
         let configs: Vec<RawSqliteParams> = (&mut [toml_config, env_config])
             .into_iter()
             .filter_map(|x| x.take())
             .collect();
 
-        (&configs[..]).try_into()
+        Ok((&configs[..]).try_into())
     }
 }
 
 impl TryFrom<&[RawSqliteParams]> for SqliteParams {
-    type Error = Error;
+    type Error = SqliteParamError;
 
-    fn try_from(value: &[RawSqliteParams]) -> Result<SqliteParams> {
+    fn try_from(value: &[RawSqliteParams]) -> std::result::Result<SqliteParams, SqliteParamError> {
         let params = value.iter().fold(RawSqliteParams::default(), |mut acc, x| {
             acc.file = x.file.to_owned().or(acc.file);
             acc
         });
 
-        Ok(Self {
-            file: params
-                .file
-                .ok_or(Error::BadSqliteConfig("No file".to_string()))?,
-        })
+        match params {
+            RawSqliteParams { file: Some(file) } => Ok(Self { file }),
+            p => Err(SqliteParamError {
+                file: p.file.is_some(),
+            }),
+        }
     }
 }
 

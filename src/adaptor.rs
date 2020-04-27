@@ -8,8 +8,8 @@ mod postgres;
 mod sqlite;
 
 pub use self::postgres::PostgresAdaptor;
-pub use sqlite::SqliteAdaptor;
 pub use config::{Config, PostgresParams, SqliteParams};
+pub use sqlite::SqliteAdaptor;
 
 pub struct Adaptor {}
 
@@ -17,15 +17,15 @@ impl Adaptor {
     pub fn load() -> Result<Box<dyn DbAdaptor>> {
         let config = Config::load(&"movine.toml")?;
         match config {
-            Config { postgres: Some(params), .. } => {
-                Ok(Box::new(PostgresAdaptor::from_params(&params)?))
-            }
-            Config { sqlite: Some(params), .. } => {
-                Ok(Box::new(SqliteAdaptor::from_params(&params)?))
-            }
-            _ => {
-                Err(Error::AdaptorNotFound)
-            }
+            Config {
+                postgres: Some(params),
+                ..
+            } => Ok(Box::new(PostgresAdaptor::from_params(&params)?)),
+            Config {
+                sqlite: Some(params),
+                ..
+            } => Ok(Box::new(SqliteAdaptor::from_params(&params)?)),
+            _ => Err(Error::AdaptorNotFound),
         }
     }
 }
