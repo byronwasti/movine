@@ -17,6 +17,17 @@ pub use sqlite::SqliteParams;
 pub struct Config {
     pub postgres: Option<PostgresParams>,
     pub sqlite: Option<SqliteParams>,
+    pub database_url: Option<String>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+         Config {
+             postgres: None,
+             sqlite: None,
+             database_url: None,
+         }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -41,6 +52,14 @@ impl Config {
         let pg_env_params = RawPostgresParams::load_from_env();
         let sqlite_env_params = RawSqliteParams::load_from_env();
 
+        let database_url = std::env::var("DATABASE_URL");
+        if let Ok(database_url) = database_url {
+            return Ok(Config {
+                database_url: Some(database_url),
+                ..Self::default()
+            })
+        }
+
         let raw_config = match raw_config {
             Ok(raw_config) => Some(raw_config),
             Err(Error::IoError(e)) if e.kind() == std::io::ErrorKind::NotFound => None,
@@ -59,7 +78,7 @@ impl Config {
                 let params: PostgresParams = (&params[..]).try_into()?;
                 Ok(Self {
                     postgres: Some(params),
-                    sqlite: None,
+                    ..Self::default()
                 })
             }
             Some(RawConfig {
@@ -71,7 +90,7 @@ impl Config {
                 let params = (&params[..]).try_into()?;
                 Ok(Self {
                     sqlite: Some(params),
-                    postgres: None,
+                    ..Self::default()
                 })
             }
             _ => match (pg_env_params, sqlite_env_params) {
@@ -80,7 +99,7 @@ impl Config {
                     let params = (&params[..]).try_into()?;
                     Ok(Self {
                         postgres: Some(params),
-                        sqlite: None,
+                    ..Self::default()
                     })
                 }
                 (_, Ok(sqlite_env_params)) => {
@@ -88,7 +107,7 @@ impl Config {
                     let params = (&params[..]).try_into()?;
                     Ok(Self {
                         sqlite: Some(params),
-                        postgres: None,
+                        ..Self::default()
                     })
                 }
                 _ => Err(Error::ConfigNotFound),

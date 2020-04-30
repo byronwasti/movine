@@ -20,6 +20,16 @@ fn run() -> Result<()> {
     let config = Config::load(&"movine.toml")?;
     let adaptor = match config {
         Config {
+            database_url: Some(url),
+            ..
+        } => {
+            if url.starts_with("postgres") {
+                Box::new(PostgresAdaptor::from_url(&url)?) as Box<dyn DbAdaptor>
+            } else {
+                return Err(Error::AdaptorNotFound);
+            }
+        }
+        Config {
             postgres: Some(params),
             ..
         } => Box::new(PostgresAdaptor::from_params(&params)?) as Box<dyn DbAdaptor>,

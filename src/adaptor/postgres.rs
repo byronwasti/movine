@@ -34,6 +34,11 @@ impl PostgresAdaptor {
         let conn = postgres::Connection::connect(connection_params, postgres::TlsMode::None)?;
         Ok(Self { conn })
     }
+
+    pub fn from_url(url: &str) -> Result<Self> {
+        let conn = postgres::Connection::connect(url, postgres::TlsMode::None)?;
+        Ok(Self { conn })
+    }
 }
 
 impl DbAdaptor for PostgresAdaptor {
