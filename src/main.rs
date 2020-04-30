@@ -1,7 +1,7 @@
-use movine::adaptor::DbAdaptor;
+use movine::adaptor::{DbAdaptor, PostgresAdaptor, SqliteAdaptor};
 use movine::cli::Opt;
-use movine::config::{Adaptor, Config};
-use movine::errors::Result;
+use movine::config::Config;
+use movine::errors::{Error, Result};
 use movine::Movine;
 use structopt::StructOpt;
 
@@ -17,24 +17,25 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-    let config = Config::from_file(&"movine.toml").or_else(|error| match Config::from_env() {
-        Some(config) => Ok(config),
-        None => Err(error),
-    })?;
-    let adaptor = config.into_adaptor()?;
-    match adaptor {
-        Adaptor::Postgres(adaptor) => {
-            let mut movine = Movine::new(adaptor);
-            run_from_args(&mut movine)
+    let config = Config::load(&"movine.toml")?;
+    let adaptor = match config {
+        Config {
+            postgres: Some(params),
+            ..
+        } => Box::new(PostgresAdaptor::from_params(&params)?) as Box<dyn DbAdaptor>,
+        Config {
+            sqlite: Some(params),
+            ..
+        } => Box::new(SqliteAdaptor::from_params(&params)?) as Box<dyn DbAdaptor>,
+        _ => {
+            return Err(Error::AdaptorNotFound);
         }
-        Adaptor::Sqlite(adaptor) => {
-            let mut movine = Movine::new(adaptor);
-            run_from_args(&mut movine)
-        }
-    }
+    };
+    let mut movine = Movine::new(adaptor);
+    run_from_args(&mut movine)
 }
 
-fn run_from_args<T: DbAdaptor>(movine: &mut Movine<T>) -> Result<()> {
+fn run_from_args(movine: &mut Movine) -> Result<()> {
     match Opt::from_args() {
         Opt::Init {} => movine.initialize(),
         Opt::Generate { name } => movine.generate(&name),

@@ -1,7 +1,7 @@
+use crate::display;
 use crate::errors::Result;
 use crate::migration::Migration;
 use crate::plan_builder::Step;
-use crate::display;
 
 mod postgres;
 mod sqlite;

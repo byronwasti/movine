@@ -41,7 +41,8 @@ pub fn print_plan(plan: &[(Step, &Migration)]) {
 
 pub fn print_step((step, migration): &(Step, &Migration)) {
     use Step::*;
-    println!("{color}{step}{reset} - {name}",
+    println!(
+        "{color}{step}{reset} - {name}",
         name = migration.name,
         step = match step {
             // Add spaces in front to make them all the same length
@@ -52,4 +53,3 @@ pub fn print_step((step, migration): &(Step, &Migration)) {
         reset = color::Fg(color::Reset),
     );
 }
-
