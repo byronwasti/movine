@@ -5,7 +5,7 @@ use crate::migration::{Migration, MigrationBuilder};
 use postgres;
 
 pub struct PostgresAdaptor {
-    conn: postgres::Connection,
+    conn: postgres::Client,
 }
 
 impl PostgresAdaptor {
@@ -18,7 +18,7 @@ impl PostgresAdaptor {
             port = port,
             database = database,
         );
-        let conn = postgres::Connection::connect(connection_params, postgres::TlsMode::None)?;
+        let conn = postgres::Client::connect(&connection_params, postgres::NoTls)?;
         Ok(Self { conn })
     }
 
@@ -31,7 +31,7 @@ impl PostgresAdaptor {
             port = params.port,
             database = params.database,
         );
-        let conn = postgres::Connection::connect(connection_params, postgres::TlsMode::None)?;
+        let conn = postgres::Client::connect(&connection_params, postgres::NoTls)?;
         Ok(Self { conn })
     }
 }
@@ -45,7 +45,7 @@ impl DbAdaptor for PostgresAdaptor {
         INIT_DOWN_SQL
     }
 
-    fn load_migrations(&self) -> Result<Vec<Migration>> {
+    fn load_migrations(&mut self) -> Result<Vec<Migration>> {
         let mut migrations = Vec::new();
         let sql = "
             SELECT name, hash, down_sql
@@ -77,7 +77,7 @@ impl DbAdaptor for PostgresAdaptor {
         let empty_string = "".to_string();
         let down_sql = migration.down_sql.as_ref().unwrap_or_else(|| &empty_string);
 
-        let transaction = self.conn.transaction()?;
+        let mut transaction = self.conn.transaction()?;
         transaction.batch_execute(&up_sql)?;
         transaction.execute(LOG_UP_MIGRATION, &[&name, &hash, &down_sql])?;
         transaction.commit()?;
@@ -91,7 +91,7 @@ impl DbAdaptor for PostgresAdaptor {
             .as_ref()
             .ok_or_else(|| Error::BadMigration)?;
 
-        let transaction = self.conn.transaction()?;
+        let mut transaction = self.conn.transaction()?;
         transaction.batch_execute(&down_sql)?;
         transaction.execute(LOG_DOWN_MIGRATION, &[&name])?;
         transaction.commit()?;
