@@ -7,7 +7,6 @@ homepage = "https://github.com/byronwasti/movine"
 repository = "https://github.com/byronwasti/movine"
 description = "A simple database migration manager"
 readme = "README.md"
-travis-ci = { repository = "byronwasti/movine", branch = "master" }
 maintenance = { status = "actively-developed" }
 edition = "2018"
 keywords = ["migration", "database", "cli"]
