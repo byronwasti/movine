@@ -22,11 +22,11 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-         Config {
-             postgres: None,
-             sqlite: None,
-             database_url: None,
-         }
+        Config {
+            postgres: None,
+            sqlite: None,
+            database_url: None,
+        }
     }
 }
 
@@ -57,7 +57,7 @@ impl Config {
             return Ok(Config {
                 database_url: Some(database_url),
                 ..Self::default()
-            })
+            });
         }
 
         let raw_config = match raw_config {
@@ -99,7 +99,7 @@ impl Config {
                     let params = (&params[..]).try_into()?;
                     Ok(Self {
                         postgres: Some(params),
-                    ..Self::default()
+                        ..Self::default()
                     })
                 }
                 (_, Ok(sqlite_env_params)) => {
