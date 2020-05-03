@@ -4,7 +4,7 @@
 
 Movine is a simple database migration manager that aims to be compatible with real-world migration work. Many migration managers get confused with complicated development strategies for the migrations. Movine attempts to solve this issue by keeping track of the unique hashes for the `up.sql` and `down.sql` for each migration. This allows users to easily keep track of whether their local migration history matches the one on the database.
 
-This project is currently in *very* early stages, and should be considered a proof-of-concept. The base functionality is implemented, but things should be expected to change.
+This project is currently in early stages. The base functionality is implemented, but things should be expected to change.
 
 Movine does *not* aim to be an ORM. Consider [diesel](http://diesel.rs/) instead if you want an ORM.
 
@@ -39,13 +39,17 @@ The first step to get started with Movine is to set the configuration. Configura
   ## Or use the Sqlite adaptor
   [sqlite]
   file={file}
+
+  ## Or supply a database URL
+  database_url={url_string}
   ```
 
 - **Environment variables**
-
-  You can configure the PostgreSQL adaptor using the environment variables described in the [PostgreSQL documentation](https://www.postgresql.org/docs/current/libpq-envars.html); namely `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD`. All are currently required.
+  You can configure the PostgreSQL adaptor using the environment variables described in the [PostgreSQL documentation](https://www.postgresql.org/docs/current/libpq-envars.html); namely `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD`. 
 
   You can configure the SQLite adaptor using an `SQLITE_FILE` environment variable.
+
+  Finally, you can also supply a `DATABASE_URL` environment variable.
 
   Movine supports [`.env`](https://github.com/dotenv-rs/dotenv#usage) files as a source of configuration.
 
