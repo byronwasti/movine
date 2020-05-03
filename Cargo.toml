@@ -7,21 +7,20 @@ homepage = "https://github.com/byronwasti/movine"
 repository = "https://github.com/byronwasti/movine"
 description = "A simple database migration manager"
 readme = "README.md"
-travis-ci = { repository = "byronwasti/movine", branch = "master" }
 maintenance = { status = "actively-developed" }
 edition = "2018"
 keywords = ["migration", "database", "cli"]
 categories = ["command-line-utilities", "database"]
 
 [dependencies]
-postgres = "0.15.2"
-chrono = "0.4.6"
+postgres = "0.17.2"
+chrono = "0.4.11"
 dotenv = "0.15"
 envy = "0.4"
-fern = "0.5.7"
-structopt = "0.2.14"
-toml = "0.4.10"
-serde = { version = "1.0.88", features = ["derive"] }
-log = "0.4.6"
-termion = "1.5.1"
-rusqlite = "0.21.0"
+fern = "0.6.0"
+structopt = "0.3.14"
+toml = "0.5.6"
+serde = { version = "1.0.106", features = ["derive"] }
+log = "0.4.8"
+termion = "1.5.5"
+rusqlite = "0.23.1"

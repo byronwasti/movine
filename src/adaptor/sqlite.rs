@@ -29,7 +29,7 @@ impl DbAdaptor for SqliteAdaptor {
         INIT_DOWN_SQL
     }
 
-    fn load_migrations(&self) -> Result<Vec<Migration>> {
+    fn load_migrations(&mut self) -> Result<Vec<Migration>> {
         let mut migrations = Vec::new();
         let sql = "
             SELECT name, hash, down_sql
