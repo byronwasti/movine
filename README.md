@@ -197,11 +197,12 @@ _Note: this API is in flux_
 Movine can be used as a library like so:
 ```rust
 use movine::{Movine, Config};
+use movine::adaptor::SqliteAdaptor;
 use movine::errors::Error;
 
 fn main() -> Result<(), Error> {
-    let config = Config::from_file("movine.toml")?;
-    let adaptor = config.into_sqlite_adaptor()?;
+    let config = Config::load(&"movine.toml")?;
+    let adaptor = SqliteAdaptor::from_params(&config.sqlite.unwrap())?;
     let mut movine = Movine::new(adaptor);
     movine.fix()?;
     Ok(())

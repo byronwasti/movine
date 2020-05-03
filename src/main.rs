@@ -1,9 +1,10 @@
-use movine::adaptor::{DbAdaptor, PostgresAdaptor, SqliteAdaptor};
+use movine::adaptor::{PostgresAdaptor, SqliteAdaptor};
 use movine::cli::Opt;
 use movine::config::Config;
 use movine::errors::{Error, Result};
 use movine::Movine;
 use structopt::StructOpt;
+use log::debug;
 
 mod logger;
 
@@ -12,19 +13,20 @@ fn main() {
     dotenv::dotenv().ok();
     match run() {
         Ok(()) => {}
-        Err(e) => println!("Error: {}", e),
+        Err(e) => eprintln!("Error: {}", e),
     }
 }
 
 fn run() -> Result<()> {
     let config = Config::load(&"movine.toml")?;
+    debug!("Loaded config");
     let adaptor = match config {
         Config {
             database_url: Some(url),
             ..
         } => {
             if url.starts_with("postgres") {
-                Box::new(PostgresAdaptor::from_url(&url)?) as Box<dyn DbAdaptor>
+                PostgresAdaptor::from_url(&url)?
             } else {
                 return Err(Error::AdaptorNotFound);
             }
@@ -32,11 +34,11 @@ fn run() -> Result<()> {
         Config {
             postgres: Some(params),
             ..
-        } => Box::new(PostgresAdaptor::from_params(&params)?) as Box<dyn DbAdaptor>,
+        } => PostgresAdaptor::from_params(&params)?,
         Config {
             sqlite: Some(params),
             ..
-        } => Box::new(SqliteAdaptor::from_params(&params)?) as Box<dyn DbAdaptor>,
+        } => SqliteAdaptor::from_params(&params)?,
         _ => {
             return Err(Error::AdaptorNotFound);
         }

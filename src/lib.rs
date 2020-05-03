@@ -1,3 +1,26 @@
+//! Movine provides a library implementation for integration with codebases. This lets you easily
+//! run migrations at the startup of the application.
+//!
+//! # Example
+//! ```
+//! use movine::{Movine, Config};
+//! use movine::adaptor::SqliteAdaptor;
+//! use movine::errors::Error;
+//!
+//! fn main() -> Result<(), Error> {
+//!     std::env::set_var("SQLITE_FILE", ":memory:");
+//!     let config = Config::load(&"movine.toml")?;
+//!     let adaptor = SqliteAdaptor::from_params(&config.sqlite.unwrap())?;
+//!     let mut movine = Movine::new(adaptor);
+//!     /// Note: Normally you would catch the error, however due to the doc-test
+//!     /// nature of this example, there is no migration directory so this command
+//!     /// will fail.
+//!     //movine.fix()?;
+//!     movine.fix();
+//!     Ok(())
+//! }
+//!
+//! ```
 use chrono::prelude::*;
 
 pub mod adaptor;

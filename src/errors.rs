@@ -16,14 +16,13 @@ pub enum Error {
         host: bool,
         port: bool,
     },
-
     SqliteParamError {
         file: bool,
     },
-
     BadMigration,
     Unknown,
     AdaptorNotFound,
+    MigrationDirNotFound,
     IoError(io::Error),
     TomlError(TomlError),
     PgError(PostgresError),
@@ -39,6 +38,7 @@ impl fmt::Display for Error {
             BadMigration => write!(f, "Error parsing migrations."),
             Unknown => write!(f, "Unknown error occurred"),
             AdaptorNotFound => write!(f, "Could not find adaptor"),
+            MigrationDirNotFound => write!(f, "Could not find migration directory"),
             IoError(e) => write!(f, "IO Error: {}", e),
             TomlError(e) => write!(f, "Unable to read config file: {}", e),
             PgError(e) => write!(f, "Error in Postgres: {}", e),

@@ -1,4 +1,4 @@
-use crate::errors::Result;
+use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use std::fs;
 use std::fs::File;
@@ -46,7 +46,15 @@ impl FileHandler {
     }
 
     pub fn load_local_migrations(&self) -> Result<Vec<Migration>> {
-        let directory = fs::read_dir(&self.migration_dir)?;
+        let directory = match fs::read_dir(&self.migration_dir) {
+            Ok(dir) => dir,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                return Err(Error::MigrationDirNotFound);
+            }
+            Err(e) => {
+                return Err(e)?;
+            }
+        };
         let mut migrations = Vec::new();
 
         for entry in directory {

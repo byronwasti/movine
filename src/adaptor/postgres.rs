@@ -9,7 +9,7 @@ pub struct PostgresAdaptor {
 }
 
 impl PostgresAdaptor {
-    pub fn new(user: &str, password: &str, host: &str, database: &str, port: &str) -> Result<Self> {
+    pub fn new(user: &str, password: &str, host: &str, database: &str, port: &str) -> Result<Box<dyn DbAdaptor>> {
         let connection_params = format!(
             "postgresql://{user}:{password}@{host}:{port}/{database}",
             user = user,
@@ -19,10 +19,10 @@ impl PostgresAdaptor {
             database = database,
         );
         let conn = postgres::Connection::connect(connection_params, postgres::TlsMode::None)?;
-        Ok(Self { conn })
+        Ok(Box::new(Self { conn }))
     }
 
-    pub fn from_params(params: &PostgresParams) -> Result<Self> {
+    pub fn from_params(params: &PostgresParams) -> Result<Box<dyn DbAdaptor>> {
         let connection_params = format!(
             "postgresql://{user}:{password}@{host}:{port}/{database}",
             user = params.user,
@@ -32,12 +32,12 @@ impl PostgresAdaptor {
             database = params.database,
         );
         let conn = postgres::Connection::connect(connection_params, postgres::TlsMode::None)?;
-        Ok(Self { conn })
+        Ok(Box::new(Self { conn }))
     }
 
-    pub fn from_url(url: &str) -> Result<Self> {
+    pub fn from_url(url: &str) -> Result<Box<dyn DbAdaptor>> {
         let conn = postgres::Connection::connect(url, postgres::TlsMode::None)?;
-        Ok(Self { conn })
+        Ok(Box::new(Self { conn }))
     }
 }
 

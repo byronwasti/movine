@@ -4,6 +4,7 @@ use std::convert::TryInto;
 use std::fs::File;
 use std::io::Read;
 use toml;
+use log::debug;
 
 mod postgres;
 mod sqlite;
@@ -51,9 +52,17 @@ impl Config {
         let raw_config = RawConfig::load_file(file);
         let pg_env_params = RawPostgresParams::load_from_env();
         let sqlite_env_params = RawSqliteParams::load_from_env();
-
         let database_url = std::env::var("DATABASE_URL");
+
+        debug!("Config information loaded:
+            file: {:?}
+            pg_env: {:?}
+            sqlite_env: {:?}
+            database_url: {:?}",
+            &raw_config, &pg_env_params, &sqlite_env_params, &database_url);
+
         if let Ok(database_url) = database_url {
+            debug!("Using database_url provided.");
             return Ok(Config {
                 database_url: Some(database_url),
                 ..Self::default()
@@ -62,7 +71,10 @@ impl Config {
 
         let raw_config = match raw_config {
             Ok(raw_config) => Some(raw_config),
-            Err(Error::IoError(e)) if e.kind() == std::io::ErrorKind::NotFound => None,
+            Err(Error::IoError(e)) if e.kind() == std::io::ErrorKind::NotFound => {
+                debug!("Config file not found.");
+                None
+            }
             Err(e) => {
                 return Err(e);
             }
@@ -73,6 +85,7 @@ impl Config {
                 postgres: Some(pg_params),
                 ..
             }) => {
+                debug!("Using postgres config-file params provided.");
                 let all_params = [Ok(pg_params), pg_env_params];
                 let params: Vec<_> = all_params.iter().filter_map(|x| x.as_ref().ok()).collect();
                 let params: PostgresParams = (&params[..]).try_into()?;
@@ -85,6 +98,7 @@ impl Config {
                 sqlite: Some(sqlite_params),
                 ..
             }) => {
+                debug!("Using sqlite config-file params provided.");
                 let all_params = [Ok(sqlite_params), sqlite_env_params];
                 let params: Vec<_> = all_params.iter().filter_map(|x| x.as_ref().ok()).collect();
                 let params = (&params[..]).try_into()?;
@@ -94,7 +108,8 @@ impl Config {
                 })
             }
             _ => match (pg_env_params, sqlite_env_params) {
-                (Ok(pg_env_params), _) => {
+                (Ok(pg_env_params), _) if pg_env_params.is_any() => {
+                    debug!("Using postgres env vars provided.");
                     let params = [&pg_env_params];
                     let params = (&params[..]).try_into()?;
                     Ok(Self {
@@ -102,7 +117,8 @@ impl Config {
                         ..Self::default()
                     })
                 }
-                (_, Ok(sqlite_env_params)) => {
+                (_, Ok(sqlite_env_params)) if sqlite_env_params.is_any() => {
+                    debug!("Using sqlite env vars provided.");
                     let params = [&sqlite_env_params];
                     let params = (&params[..]).try_into()?;
                     Ok(Self {
