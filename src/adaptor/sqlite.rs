@@ -9,6 +9,7 @@ pub struct SqliteAdaptor {
 }
 
 impl SqliteAdaptor {
+    #![allow(clippy::new_ret_no_self)]
     pub fn new(filename: &str) -> Result<Box<dyn DbAdaptor>> {
         let conn = Connection::open(filename)?;
         Ok(Box::new(Self { conn }))

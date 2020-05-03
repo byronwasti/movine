@@ -52,7 +52,7 @@ impl FileHandler {
                 return Err(Error::MigrationDirNotFound);
             }
             Err(e) => {
-                return Err(e)?;
+                return Err(e.into());
             }
         };
         let mut migrations = Vec::new();

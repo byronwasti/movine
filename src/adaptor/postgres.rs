@@ -9,6 +9,7 @@ pub struct PostgresAdaptor {
 }
 
 impl PostgresAdaptor {
+    #![allow(clippy::new_ret_no_self)]
     pub fn new(
         user: &str,
         password: &str,
