@@ -9,7 +9,13 @@ pub struct PostgresAdaptor {
 }
 
 impl PostgresAdaptor {
-    pub fn new(user: &str, password: &str, host: &str, database: &str, port: &str) -> Result<Box<dyn DbAdaptor>> {
+    pub fn new(
+        user: &str,
+        password: &str,
+        host: &str,
+        database: &str,
+        port: &str,
+    ) -> Result<Box<dyn DbAdaptor>> {
         let connection_params = format!(
             "postgresql://{user}:{password}@{host}:{port}/{database}",
             user = user,

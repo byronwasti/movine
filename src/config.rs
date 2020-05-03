@@ -1,10 +1,10 @@
 use crate::errors::{Error, Result};
+use log::debug;
 use serde::Deserialize;
 use std::convert::TryInto;
 use std::fs::File;
 use std::io::Read;
 use toml;
-use log::debug;
 
 mod postgres;
 mod sqlite;
@@ -54,12 +54,14 @@ impl Config {
         let sqlite_env_params = RawSqliteParams::load_from_env();
         let database_url = std::env::var("DATABASE_URL");
 
-        debug!("Config information loaded:
+        debug!(
+            "Config information loaded:
             file: {:?}
             pg_env: {:?}
             sqlite_env: {:?}
             database_url: {:?}",
-            &raw_config, &pg_env_params, &sqlite_env_params, &database_url);
+            &raw_config, &pg_env_params, &sqlite_env_params, &database_url
+        );
 
         if let Ok(database_url) = database_url {
             debug!("Using database_url provided.");

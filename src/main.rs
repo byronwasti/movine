@@ -1,10 +1,10 @@
+use log::debug;
 use movine::adaptor::{PostgresAdaptor, SqliteAdaptor};
 use movine::cli::Opt;
 use movine::config::Config;
 use movine::errors::{Error, Result};
 use movine::Movine;
 use structopt::StructOpt;
-use log::debug;
 
 fn main() {
     dotenv::dotenv().ok();
