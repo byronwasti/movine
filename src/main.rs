@@ -6,11 +6,9 @@ use movine::Movine;
 use structopt::StructOpt;
 use log::debug;
 
-mod logger;
-
 fn main() {
-    logger::init().expect("Could not initialize the logger.");
     dotenv::dotenv().ok();
+    env_logger::init();
     match run() {
         Ok(()) => {}
         Err(e) => eprintln!("Error: {}", e),
