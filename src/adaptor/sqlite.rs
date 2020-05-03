@@ -9,14 +9,14 @@ pub struct SqliteAdaptor {
 }
 
 impl SqliteAdaptor {
-    pub fn new(filename: &str) -> Result<Self> {
+    pub fn new(filename: &str) -> Result<Box<dyn DbAdaptor>> {
         let conn = Connection::open(filename)?;
-        Ok(Self { conn })
+        Ok(Box::new(Self { conn }))
     }
 
-    pub fn from_params(params: &SqliteParams) -> Result<Self> {
+    pub fn from_params(params: &SqliteParams) -> Result<Box<dyn DbAdaptor>> {
         let conn = Connection::open(&params.file)?;
-        Ok(Self { conn })
+        Ok(Box::new(Self { conn }))
     }
 }
 

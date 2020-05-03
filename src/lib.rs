@@ -1,3 +1,26 @@
+//! Movine provides a library implementation for integration with codebases. This lets you easily
+//! run migrations at the startup of the application.
+//!
+//! # Example
+//! ```
+//! use movine::{Movine, Config};
+//! use movine::adaptor::SqliteAdaptor;
+//! use movine::errors::Error;
+//!
+//! fn main() -> Result<(), Error> {
+//!     std::env::set_var("SQLITE_FILE", ":memory:");
+//!     let config = Config::load(&"movine.toml")?;
+//!     let adaptor = SqliteAdaptor::from_params(&config.sqlite.unwrap())?;
+//!     let mut movine = Movine::new(adaptor);
+//!     /// Note: Normally you would catch the error, however due to the doc-test
+//!     /// nature of this example, there is no migration directory so this command
+//!     /// will fail.
+//!     //movine.fix()?;
+//!     movine.fix();
+//!     Ok(())
+//! }
+//!
+//! ```
 use chrono::prelude::*;
 
 pub mod adaptor;
@@ -17,16 +40,16 @@ use file_handler::FileHandler;
 use migration::MigrationBuilder;
 use plan_builder::PlanBuilder;
 
-pub struct Movine<T: DbAdaptor> {
-    adaptor: T,
+pub struct Movine {
+    adaptor: Box<dyn DbAdaptor>,
     migration_dir: String,
     number: Option<usize>,
     show_plan: bool,
     ignore_divergent: bool,
 }
 
-impl<T: DbAdaptor> Movine<T> {
-    pub fn new(adaptor: T) -> Self {
+impl Movine {
+    pub fn new(adaptor: Box<dyn DbAdaptor>) -> Self {
         Self {
             adaptor,
             migration_dir: "./migrations".into(),
