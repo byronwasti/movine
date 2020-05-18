@@ -46,6 +46,7 @@ pub struct Movine {
     number: Option<usize>,
     show_plan: bool,
     ignore_divergent: bool,
+    strict: bool,
 }
 
 impl Movine {
@@ -56,6 +57,7 @@ impl Movine {
             number: None,
             show_plan: false,
             ignore_divergent: false,
+            strict: false,
         }
     }
 
@@ -76,6 +78,11 @@ impl Movine {
 
     pub fn set_ignore_divergent(&mut self, ignore_divergent: bool) -> &mut Self {
         self.ignore_divergent = ignore_divergent;
+        self
+    }
+
+    pub fn set_strict(&mut self, strict: bool) -> &mut Self {
+        self.strict = strict;
         self
     }
 
@@ -141,6 +148,7 @@ impl Movine {
             .local_migrations(&local_migrations)
             .db_migrations(&db_migrations)
             .count(self.number)
+            .set_strict(self.strict)
             .up()?;
 
         if self.show_plan {
@@ -160,6 +168,7 @@ impl Movine {
             .local_migrations(&local_migrations)
             .db_migrations(&db_migrations)
             .count(self.number)
+            .set_ignore_divergent(self.ignore_divergent)
             .down()?;
 
         if self.show_plan {
@@ -197,6 +206,7 @@ impl Movine {
             .local_migrations(&local_migrations)
             .db_migrations(&db_migrations)
             .count(self.number)
+            .set_ignore_divergent(self.ignore_divergent)
             .redo()?;
 
         if self.show_plan {

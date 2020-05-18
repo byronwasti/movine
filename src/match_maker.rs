@@ -52,7 +52,14 @@ impl<'a> Matching<'a> {
     pub fn get_best_down_migration(&self) -> &'a Migration {
         use Matching::*;
         match self {
-            Applied(x) | Pending(x) | Variant(x, _) | Divergent(x) => x,
+            Applied(x) | Pending(x) | Divergent(x) => x,
+            Variant(x, y) => {
+                if x.down_sql.is_some() {
+                    x
+                } else {
+                    y
+                }
+            }
         }
     }
 
