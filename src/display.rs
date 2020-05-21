@@ -10,9 +10,19 @@ pub fn print_status(matchings: &[Matching]) {
 
     use Matching::*;
     for matching in matchings.iter().rev() {
+        let reversable_str = if matching.is_reversable() {
+            "".to_owned()
+        } else {
+            format!(
+                "{color} [unreversable]{reset}",
+                color = color::Fg(color::Red),
+                reset = color::Fg(color::Reset),
+            )
+        };
+
         writeln!(
             handle,
-            "{color}{status}{reset} - {name}",
+            "{color}{status}{reset}{reversable} - {name}",
             name = matching.get_name(),
             status = match matching {
                 // Add spaces in front to make them all the same length
@@ -28,6 +38,7 @@ pub fn print_status(matchings: &[Matching]) {
                 Variant(_, _) => color::Fg(color::LightRed).to_string(),
             },
             reset = color::Fg(color::Reset),
+            reversable = reversable_str,
         )
         .unwrap();
     }
@@ -41,15 +52,24 @@ pub fn print_plan(plan: &[(Step, &Migration)]) {
 
 pub fn print_step((step, migration): &(Step, &Migration)) {
     use Step::*;
-    println!(
-        "{color}{step}{reset} - {name}",
-        name = migration.name,
-        step = match step {
-            // Add spaces in front to make them all the same length
-            Up => "  Up",
-            Down => "Down",
-        },
-        color = color::Fg(color::Green),
-        reset = color::Fg(color::Reset),
-    );
+    if migration.is_reversable() || step == &Step::Up {
+        println!(
+            "{color}{step}{reset} - {name}",
+            name = migration.name,
+            step = match step {
+                // Add spaces in front to make them all the same length
+                Up => "  Up",
+                Down => "Down",
+            },
+            color = color::Fg(color::Green),
+            reset = color::Fg(color::Reset),
+        );
+    } else {
+        println!(
+            "{color}Unreversable migration{reset} - {name}",
+            name = migration.name,
+            color = color::Fg(color::Red),
+            reset = color::Fg(color::Reset),
+        );
+    }
 }

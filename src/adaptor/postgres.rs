@@ -2,7 +2,6 @@ use crate::adaptor::DbAdaptor;
 use crate::config::PostgresParams;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
-use postgres;
 
 pub struct PostgresAdaptor {
     conn: postgres::Client,

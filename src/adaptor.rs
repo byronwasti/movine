@@ -24,7 +24,9 @@ pub trait DbAdaptor {
                     self.run_up_migration(&migration)?;
                 }
                 Step::Down => {
-                    self.run_down_migration(&migration)?;
+                    if migration.is_reversable() {
+                        self.run_down_migration(&migration)?;
+                    }
                 }
             }
         }

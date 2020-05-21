@@ -1,10 +1,12 @@
 use log::debug;
 use movine::adaptor::{PostgresAdaptor, SqliteAdaptor};
-use movine::cli::Opt;
 use movine::config::Config;
 use movine::errors::{Error, Result};
 use movine::Movine;
 use structopt::StructOpt;
+
+mod cli;
+use cli::Opt;
 
 fn main() {
     dotenv::dotenv().ok();
@@ -39,9 +41,11 @@ fn run() -> Result<()> {
         } => {
             setup(debug);
             let mut movine = initialize()?;
-            movine.set_number(number)
+            movine
+                .set_number(number)
                 .set_strict(strict)
-                .set_show_plan(show_plan).up()
+                .set_show_plan(show_plan)
+                .up()
         }
         Opt::Down {
             number,
@@ -65,9 +69,11 @@ fn run() -> Result<()> {
         } => {
             setup(debug);
             let mut movine = initialize()?;
-            movine.set_number(number)
+            movine
+                .set_number(number)
                 .set_ignore_divergent(ignore_divergent)
-                .set_show_plan(show_plan).redo()
+                .set_show_plan(show_plan)
+                .redo()
         }
         Opt::Fix { show_plan, debug } => {
             setup(debug);

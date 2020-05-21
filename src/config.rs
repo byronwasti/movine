@@ -4,7 +4,6 @@ use serde::Deserialize;
 use std::convert::TryInto;
 use std::fs::File;
 use std::io::Read;
-use toml;
 
 mod postgres;
 mod sqlite;

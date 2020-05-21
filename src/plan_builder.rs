@@ -66,7 +66,7 @@ impl<'a> PlanBuilder<'a> {
                     pending_found = true;
                     if let Some(count) = self.count {
                         if count == plan.len() {
-                            continue
+                            continue;
                         }
                     }
 
@@ -77,7 +77,7 @@ impl<'a> PlanBuilder<'a> {
                     if pending_found {
                         dirty = true;
                     }
-                    continue
+                    continue;
                 }
             }
         }
@@ -97,30 +97,29 @@ impl<'a> PlanBuilder<'a> {
         // We want the most recently run, so we have to reverse the order.
         for m in matches.iter().rev() {
             match m {
-                Matching::Applied(x) => {
-                    plan.push((Step::Down, x));
-                }
                 Matching::Divergent(x) => {
                     if self.ignore_divergent {
-                        continue
+                        continue;
                     }
 
                     plan.push((Step::Down, x));
                 }
-                m@Matching::Variant(_, _) => {
-                    plan.push((Step::Down, m.get_best_down_migration()));
+                Matching::Applied(_) | Matching::Variant(_, _) => {
+                    if m.is_reversable() {
+                        plan.push((Step::Down, m.get_best_down_migration()));
+                    } else {
+                        return Err(Error::UnrollbackableMigration);
+                    }
                 }
                 _ => {}
             }
 
             if let Some(count) = self.count {
                 if count == plan.len() {
-                    break
+                    break;
                 }
-            } else {
-                if plan.len() == 1 {
-                    break
-                }
+            } else if plan.len() == 1 {
+                break;
             }
         }
 
@@ -137,19 +136,31 @@ impl<'a> PlanBuilder<'a> {
             match m {
                 Matching::Divergent(x) => {
                     bad_migration_found = true;
-                    rollback_plan_rev.push((Step::Down, x));
+                    if m.is_reversable() {
+                        rollback_plan_rev.push((Step::Down, x));
+                    } else {
+                        return Err(Error::UnrollbackableMigration);
+                    }
                 }
-                m@Matching::Variant(_,_) => {
+                Matching::Variant(_, _) => {
                     bad_migration_found = true;
                     let down = m.get_best_down_migration();
                     let up = m.get_local_migration().unwrap();
-                    rollback_plan_rev.push((Step::Down, down));
-                    rollup_plan.push((Step::Up, up));
+                    if m.is_reversable() {
+                        rollback_plan_rev.push((Step::Down, down));
+                        rollup_plan.push((Step::Up, up));
+                    } else {
+                        return Err(Error::UnrollbackableMigration);
+                    }
                 }
                 Matching::Applied(x) => {
                     if bad_migration_found {
-                        rollback_plan_rev.push((Step::Down, x));
-                        rollup_plan.push((Step::Up, x));
+                        if m.is_reversable() {
+                            rollback_plan_rev.push((Step::Down, x));
+                            rollup_plan.push((Step::Up, x));
+                        } else {
+                            return Err(Error::UnrollbackableMigration);
+                        }
                     }
                 }
                 Matching::Pending(x) => {
@@ -173,32 +184,30 @@ impl<'a> PlanBuilder<'a> {
         // We want the most recently run, so we have to reverse the order.
         for m in matches.iter().rev() {
             match m {
-                Matching::Applied(x) => {
-                    rollback_plan.push((Step::Down, x));
-                    rollup_plan_rev.push((Step::Up, x));
-                }
                 Matching::Divergent(_) => {
                     if self.ignore_divergent {
-                        continue
+                        continue;
                     }
-    
+
                     return Err(Error::DivergentMigration);
                 }
-                m@Matching::Variant(_, _) => {
-                    rollback_plan.push((Step::Down, m.get_best_down_migration()));
-                    rollup_plan_rev.push((Step::Down, m.get_local_migration().unwrap()));
+                Matching::Applied(_) | Matching::Variant(_, _) => {
+                    if m.is_reversable() {
+                        rollback_plan.push((Step::Down, m.get_best_down_migration()));
+                        rollup_plan_rev.push((Step::Up, m.get_local_migration().unwrap()));
+                    } else {
+                        return Err(Error::UnrollbackableMigration);
+                    }
                 }
                 _ => {}
             }
 
             if let Some(count) = self.count {
                 if count == rollback_plan.len() {
-                    break
+                    break;
                 }
-            } else {
-                if rollback_plan.len() == 1 {
-                    break
-                }
+            } else if rollback_plan.len() == 1 {
+                break;
             }
         }
 
@@ -228,7 +237,7 @@ impl<'a> PlanBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::migration::{Migration, MigrationBuilder};
+    use crate::migration::Migration;
 
     // QoL impl
     impl Migration {
@@ -236,7 +245,7 @@ mod tests {
             Self {
                 name: name.to_string(),
                 up_sql: None,
-                down_sql: None,
+                down_sql: Some("test".to_owned()),
                 hash: None,
             }
         }
@@ -254,17 +263,14 @@ mod tests {
     #[test]
     /// Up should run pending migrations in-order.
     fn test_up_1() {
-        let local = [
-            Migration::new(&"test_1"),
-            Migration::new(&"test_2")
-        ];
+        let local = [Migration::new(&"test_1"), Migration::new(&"test_2")];
         let db = [];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
             .db_migrations(&db)
             .up()
             .unwrap();
-        assert_eq!(plan, [(Step::Up, &local[0]),(Step::Up, &local[1])])
+        assert_eq!(plan, [(Step::Up, &local[0]), (Step::Up, &local[1])])
     }
 
     #[test]
@@ -330,8 +336,8 @@ mod tests {
     fn test_fix_1() {
         let local = [
             Migration::new(&"test_0"),
-            MigrationBuilder::new().compound_name(&"test_1").down_sql(&"test").build().unwrap(),
-            MigrationBuilder::new().compound_name(&"test_2").down_sql(&"test").build().unwrap(),
+            Migration::new(&"test_1"),
+            Migration::new(&"test_2"),
         ];
         let db = [
             Migration::new(&"test_0"),
@@ -361,7 +367,7 @@ mod tests {
     fn test_fix_2() {
         let local = [
             Migration::new(&"test"),
-            MigrationBuilder::new().compound_name(&"test_1").down_sql(&"test").build().unwrap(),
+            Migration::new(&"test_1"),
             Migration::new(&"test_2"),
         ];
         let db = [
@@ -391,7 +397,7 @@ mod tests {
     fn test_fix_3() {
         let local = [
             Migration::new(&"test_0"),
-            MigrationBuilder::new().compound_name(&"test_1").down_sql(&"test").build().unwrap(),
+            Migration::new(&"test_1"),
             Migration::new(&"test_2"),
             Migration::new(&"test_3"),
             Migration::new(&"test_4"),
@@ -458,7 +464,7 @@ mod tests {
     }
 
     #[test]
-    /// Redo should properly ignore divergent migrations 
+    /// Redo should properly ignore divergent migrations
     fn test_redo_2() {
         let local = [
             Migration::new(&"test_0"),
@@ -490,7 +496,7 @@ mod tests {
     }
 
     #[test]
-    /// Redo should not care about variant migrations further than what we are redo'ing 
+    /// Redo should not care about variant migrations further than what we are redo'ing
     fn test_redo_3() {
         let local = [
             Migration::new(&"test_0"),
@@ -508,10 +514,34 @@ mod tests {
             .count(Some(1))
             .redo()
             .unwrap();
+        assert_eq!(plan, [(Step::Down, &local[2]), (Step::Up, &local[2]),])
+    }
+
+    #[test]
+    /// Redo should properly rollback variant migrations
+    fn test_redo_4() {
+        let local = [
+            Migration::new(&"test_0"),
+            Migration::new(&"test_1"),
+            Migration::new(&"test_2"),
+        ];
+        let db = [
+            Migration::new(&"test_0"),
+            Migration::new_with_hash(&"test_1", &"hash_1"),
+            Migration::new(&"test_2"),
+        ];
+        let plan = PlanBuilder::new()
+            .local_migrations(&local)
+            .db_migrations(&db)
+            .count(Some(2))
+            .redo()
+            .unwrap();
         assert_eq!(
             plan,
             [
                 (Step::Down, &local[2]),
+                (Step::Down, &local[1]),
+                (Step::Up, &local[1]),
                 (Step::Up, &local[2]),
             ]
         )

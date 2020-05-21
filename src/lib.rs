@@ -23,8 +23,10 @@
 //! ```
 use chrono::prelude::*;
 
+#[macro_use]
+extern crate log;
+
 pub mod adaptor;
-pub mod cli;
 pub mod config;
 mod display;
 pub mod errors;

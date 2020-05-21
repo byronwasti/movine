@@ -70,6 +70,14 @@ impl<'a> Matching<'a> {
             Divergent(_) => None,
         }
     }
+
+    pub fn is_reversable(&self) -> bool {
+        use Matching::*;
+        match self {
+            Applied(x) | Pending(x) | Divergent(x) => x.is_reversable(),
+            Variant(x, y) => x.is_reversable() || y.is_reversable(),
+        }
+    }
 }
 
 impl Ord for Matching<'_> {

@@ -11,6 +11,17 @@ pub struct Migration {
     pub hash: Option<String>,
 }
 
+impl Migration {
+    pub fn is_reversable(&self) -> bool {
+        debug!("down_sql: {:?}", &self.down_sql);
+        if let Some(sql) = &self.down_sql {
+            sql != ""
+        } else {
+            false
+        }
+    }
+}
+
 pub struct MigrationBuilder {
     compound_name: Option<String>,
     name: Option<String>,
