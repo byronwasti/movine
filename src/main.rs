@@ -12,7 +12,10 @@ fn main() {
     dotenv::dotenv().ok();
     match run() {
         Ok(()) => {}
-        Err(e) => eprintln!("Error: {}", e),
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            std::process::exit(1);
+        },
     }
 }
 
