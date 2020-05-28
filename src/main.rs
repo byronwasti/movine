@@ -11,8 +11,11 @@ use cli::Opt;
 fn main() {
     dotenv::dotenv().ok();
     match run() {
-        Ok(()) => {}
-        Err(e) => eprintln!("Error: {}", e),
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            std::process::exit(1);
+        }
     }
 }
 
