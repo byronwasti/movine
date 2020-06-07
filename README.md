@@ -8,6 +8,10 @@ This project is currently in early stages. The base functionality is implemented
 
 Movine does *not* aim to be an ORM. Consider [diesel](http://diesel.rs/) instead if you want an ORM.
 
+## Short Asciinema Demo
+
+[![asciicast](https://asciinema.org/a/337319.svg)](https://asciinema.org/a/337319)
+
 ## Migration Concepts
 
 Movine keeps track of four different states of migrations on the database. There are the basic ones:
