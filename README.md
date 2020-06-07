@@ -198,7 +198,7 @@ $ movine status
 The `custom` command will allow you to specify your own migration strategy (in case Movine is not smart enough). *Note: this is currently not implemented*
 
 ## Library Usage
-_Note: this API is in flux_
+_Note: this API is in development. Please let me know your feedback!_
 
 Movine can be used as a library like so:
 ```rust
