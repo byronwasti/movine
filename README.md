@@ -2,15 +2,11 @@
 ![Linux build status](https://github.com/byronwasti/movine/workflows/CI/badge.svg)
 [![Crates.io](https://img.shields.io/crates/v/movine.svg)](https://crates.io/crates/movine)
 
-Movine is a simple database migration manager that aims to be compatible with real-world migration work. Many migration managers get confused with complicated development strategies for the migrations. Movine attempts to solve this issue by keeping track of the unique hashes for the `up.sql` and `down.sql` for each migration. This allows users to easily keep track of whether their local migration history matches the one on the database.
+Movine is a simple database migration manager that aims to be compatible with real-world migration work. Many migration managers get confused with complicated development strategies for migrations. Oftentimes migration managers do not warn you if the SQL saved in git differs from what was actually run on the database. Movine solves this issue by keeping track of the unique hashes for the `up.sql` and `down.sql` for each migration, and provides tools for fixing issues. This allows users to easily keep track of whether their local migration history matches the one on the database.
 
-This project is currently in early stages. The base functionality is implemented, but things should be expected to change.
+This project is currently in early stages.
 
 Movine does *not* aim to be an ORM. Consider [diesel](http://diesel.rs/) instead if you want an ORM.
-
-## Short Asciinema Demo
-
-[![asciicast](https://asciinema.org/a/337321.svg)](https://asciinema.org/a/337321)
 
 ## Migration Concepts
 
@@ -23,6 +19,12 @@ Then there are the more complicated ones, which Movine was specifically designed
 
 - Variant: Found locally but a different version is applied to the database
 - Divergent: Not found locally but applied to the database
+
+## Short Asciinema Demo
+
+A 3.5 minute video showcasing the various tools Movine provides.
+
+[![asciicast](https://asciinema.org/a/337321.svg)](https://asciinema.org/a/337321)
 
 ## Getting Started
 
@@ -229,14 +231,14 @@ fn main() -> Result<(), Error> {
 
 ## Why you should use Movine
 
-- You are tolerant to occasional breakage
+- You accept the risks of pre-1.0 software
 - You want to write raw sql for your migrations
 - You have a shared database that has migrations developed by multiple developers
-- You are bad at rolling back a migration before editing it
+- You want a migration management solution that works for the developers 
 
 ## Why you should not use Movine
 
-- You want a robust and proven database migration manager
-- You want ORM integration (consider the [diesel](http://diesel.rs/) instead)
-- You don't see value in keeping track of variant or divergent migrations.
+- You want long battle-tested database migration manager
+- You want ORM integration (consider [diesel](http://diesel.rs/) instead)
+- You don't see value in keeping track of variant or divergent migrations
 
