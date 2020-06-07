@@ -10,7 +10,7 @@ Movine does *not* aim to be an ORM. Consider [diesel](http://diesel.rs/) instead
 
 ## Short Asciinema Demo
 
-[![asciicast](https://asciinema.org/a/337319.svg)](https://asciinema.org/a/337319)
+[![asciicast](https://asciinema.org/a/337321.svg)](https://asciinema.org/a/337321)
 
 ## Migration Concepts
 
