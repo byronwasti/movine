@@ -32,9 +32,7 @@ impl PostgresAdaptor {
         if let Some(cert) = sslcert {
             let cert = fs::read(cert)?;
             let cert = Certificate::from_pem(&cert)?;
-            let connector = TlsConnector::builder()
-                .add_root_certificate(cert)
-                .build()?;
+            let connector = TlsConnector::builder().add_root_certificate(cert).build()?;
             let tls = MakeTlsConnector::new(connector);
             let conn = postgres::Client::connect(&connection_params, tls)?;
             Ok(Box::new(Self { conn }))
@@ -42,7 +40,6 @@ impl PostgresAdaptor {
             let conn = postgres::Client::connect(&connection_params, postgres::NoTls)?;
             Ok(Box::new(Self { conn }))
         }
-
     }
 
     pub fn from_params(params: &PostgresParams) -> Result<Box<dyn DbAdaptor>> {
@@ -52,7 +49,7 @@ impl PostgresAdaptor {
             &params.host,
             &params.database,
             &params.port.to_string(),
-            params.sslcert.as_deref()
+            params.sslcert.as_deref(),
         )
     }
 
