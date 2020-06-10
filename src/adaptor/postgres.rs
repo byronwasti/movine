@@ -2,6 +2,9 @@ use crate::adaptor::DbAdaptor;
 use crate::config::PostgresParams;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
+use native_tls::{Certificate, TlsConnector};
+use postgres_native_tls::MakeTlsConnector;
+use std::fs;
 
 pub struct PostgresAdaptor {
     conn: postgres::Client,
@@ -15,6 +18,7 @@ impl PostgresAdaptor {
         host: &str,
         database: &str,
         port: &str,
+        sslcert: Option<&str>,
     ) -> Result<Box<dyn DbAdaptor>> {
         let connection_params = format!(
             "postgresql://{user}:{password}@{host}:{port}/{database}",
@@ -24,21 +28,32 @@ impl PostgresAdaptor {
             port = port,
             database = database,
         );
-        let conn = postgres::Client::connect(&connection_params, postgres::NoTls)?;
-        Ok(Box::new(Self { conn }))
+
+        if let Some(cert) = sslcert {
+            let cert = fs::read(cert)?;
+            let cert = Certificate::from_pem(&cert)?;
+            let connector = TlsConnector::builder()
+                .add_root_certificate(cert)
+                .build()?;
+            let tls = MakeTlsConnector::new(connector);
+            let conn = postgres::Client::connect(&connection_params, tls)?;
+            Ok(Box::new(Self { conn }))
+        } else {
+            let conn = postgres::Client::connect(&connection_params, postgres::NoTls)?;
+            Ok(Box::new(Self { conn }))
+        }
+
     }
 
     pub fn from_params(params: &PostgresParams) -> Result<Box<dyn DbAdaptor>> {
-        let connection_params = format!(
-            "postgresql://{user}:{password}@{host}:{port}/{database}",
-            user = params.user,
-            password = params.password,
-            host = params.host,
-            port = params.port,
-            database = params.database,
-        );
-        let conn = postgres::Client::connect(&connection_params, postgres::NoTls)?;
-        Ok(Box::new(Self { conn }))
+        PostgresAdaptor::new(
+            &params.user,
+            &params.password,
+            &params.host,
+            &params.database,
+            &params.port.to_string(),
+            params.sslcert.as_deref()
+        )
     }
 
     pub fn from_url(url: &str) -> Result<Box<dyn DbAdaptor>> {

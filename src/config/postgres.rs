@@ -9,6 +9,7 @@ pub struct PostgresParams {
     pub host: String,
     pub database: String,
     pub port: i32,
+    pub sslcert: Option<String>,
 }
 
 impl TryFrom<&[&RawPostgresParams]> for PostgresParams {
@@ -23,6 +24,7 @@ impl TryFrom<&[&RawPostgresParams]> for PostgresParams {
                 acc.host = x.host.to_owned().or(acc.host);
                 acc.database = x.database.to_owned().or(acc.database);
                 acc.port = x.port.to_owned().or(acc.port);
+                acc.sslcert = x.sslcert.to_owned().or(acc.sslcert);
                 acc
             });
 
@@ -33,12 +35,14 @@ impl TryFrom<&[&RawPostgresParams]> for PostgresParams {
                 database: Some(database),
                 host: Some(host),
                 port: Some(port),
+                sslcert,
             } => Ok(Self {
                 user,
                 password,
                 host,
                 database,
                 port,
+                sslcert,
             }),
             p => Err(Error::PgParamError {
                 user: p.user.is_some(),
@@ -58,6 +62,7 @@ pub struct RawPostgresParams {
     pub host: Option<String>,
     pub database: Option<String>,
     pub port: Option<i32>,
+    pub sslcert: Option<String>,
 }
 
 impl RawPostgresParams {
@@ -83,6 +88,7 @@ impl Default for RawPostgresParams {
             host: None,
             database: None,
             port: Some(5432),
+            sslcert: None,
         }
     }
 }
