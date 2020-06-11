@@ -31,6 +31,7 @@ pub enum Error {
     PgError(PostgresError),
     SqliteError(SqliteError),
     Envy(envy::Error),
+    NativeTlsError(native_tls::Error),
 }
 
 impl fmt::Display for Error {
@@ -50,6 +51,7 @@ impl fmt::Display for Error {
             PgError(e) => write!(f, "Error in Postgres: {}", e),
             SqliteError(e) => write!(f, "Error in Sqlite: {}", e),
             Envy(e) => write!(f, "Error in loading environment variables: {}", e),
+            NativeTlsError(e) => write!(f, "Error in TLS: {}", e),
             SqliteParamError { .. } => write!(f, "Unable to load Sqlite params. Make sure you have `file` defined in your `movine.toml` or SQLITE_FILE defined as an environment variable"),
             PgParamError {
                 user, password, database, host, port
@@ -88,5 +90,11 @@ impl From<SqliteError> for Error {
 impl From<envy::Error> for Error {
     fn from(error: envy::Error) -> Self {
         Error::Envy(error)
+    }
+}
+
+impl From<native_tls::Error> for Error {
+    fn from(error: native_tls::Error) -> Self {
+        Error::NativeTlsError(error)
     }
 }

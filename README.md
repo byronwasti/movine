@@ -26,38 +26,46 @@ A 3.5 minute video showcasing the various tools Movine provides.
 
 [![asciicast](https://asciinema.org/a/337321.svg)](https://asciinema.org/a/337321)
 
-## Getting Started
+## Configuration
 
 The first step to get started with Movine is to set the configuration. Configuration can be supplied either through a `movile.toml` file or environment variables:
 
-- **`movine.toml`**
+### Using a Config File
+If Movine finds a config file named `movine.toml` it will use the parameters specified.
 
-  This file stores the connection parameters that Movine needs in order to connect to the database. In the future this file will also hold   various parameters to customize the way Movine operates.
+```toml
+[postgres]
+host = {host}
+database = {db}
+user = {username}
+password = {pass}
+port = {port}
+sslcert = {cert filename}
 
-  ```toml
-  [postgres]
-  host = {host}
-  database = {db}
-  user = {username}
-  password = {pass}
-  port = {port}
+## Or use the Sqlite adaptor
+[sqlite]
+file={file}
 
-  ## Or use the Sqlite adaptor
-  [sqlite]
-  file={file}
+## Or supply a database URL
+database_url={url_string}
+```
 
-  ## Or supply a database URL
-  database_url={url_string}
-  ```
+*Note: SSLCert currently does not work when supplying a database_url.*
+*Note: You should only specify connection details for one database type, or Movine will implicitly choose one*
 
-- **Environment variables**
-  You can configure the PostgreSQL adaptor using the environment variables described in the [PostgreSQL documentation](https://www.postgresql.org/docs/current/libpq-envars.html); namely `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD`. 
+### Environment variables
 
-  You can configure the SQLite adaptor using an `SQLITE_FILE` environment variable.
+You can configure the PostgreSQL adaptor using the environment variables described in the [PostgreSQL documentation](https://www.postgresql.org/docs/current/libpq-envars.html). Specifically `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD` and `PGSSLCERT` are supported.
 
-  Finally, you can also supply a `DATABASE_URL` environment variable.
+You can configure the SQLite adaptor using an `SQLITE_FILE` environment variable.
 
-  Movine supports [`.env`](https://github.com/dotenv-rs/dotenv#usage) files as a source of configuration.
+Finally, you can also supply a `DATABASE_URL` environment variable.
+
+*Note: SSLCert does not work when using a database URL.*
+
+Movine supports [`.env`](https://github.com/dotenv-rs/dotenv#usage) files as a source of configuration.
+
+## Initializing
 
 Next, you can run the `init` command to set everything up, the `generate` command to create your first migration, and once those are written you can run `up` to apply them.
 ```
