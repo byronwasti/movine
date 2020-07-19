@@ -6,11 +6,18 @@ use native_tls::{Certificate, TlsConnector};
 use postgres_native_tls::MakeTlsConnector;
 use std::fs;
 
-pub struct PostgresAdaptor {
-    conn: postgres::Client,
+/*
+pub struct PostgresAdaptor<'a> {
+    conn: &'a mut postgres::Client,
 }
 
-impl PostgresAdaptor {
+impl<'a> PostgresAdaptor<'a> {
+    pub fn from_conn(conn: &'a mut postgres::Client) -> Self {
+        Self {
+            conn,
+        }
+    }
+
     #![allow(clippy::new_ret_no_self)]
     pub fn new(
         user: &str,
@@ -54,12 +61,13 @@ impl PostgresAdaptor {
     }
 
     pub fn from_url(url: &str) -> Result<Box<dyn DbAdaptor>> {
-        let conn = postgres::Client::connect(&url, postgres::NoTls)?;
-        Ok(Box::new(Self { conn }))
+        let conn0 = postgres::Client::connect(&url, postgres::NoTls)?;
+        Ok(Box::new(Self { conn: &'static mut conn0 }))
     }
 }
+*/
 
-impl DbAdaptor for PostgresAdaptor {
+impl DbAdaptor for &mut postgres::Client {
     fn init_up_sql(&self) -> &'static str {
         INIT_UP_SQL
     }
@@ -75,7 +83,7 @@ impl DbAdaptor for PostgresAdaptor {
             FROM movine_migrations
             ORDER BY created_at DESC;
         ";
-        let rows = self.conn.query(sql, &[])?;
+        let rows = self.query(sql, &[])?;
         for row in &rows {
             let name: String = row.get(0);
             let hash: String = row.get(1);
@@ -100,7 +108,7 @@ impl DbAdaptor for PostgresAdaptor {
         let empty_string = "".to_string();
         let down_sql = migration.down_sql.as_ref().unwrap_or_else(|| &empty_string);
 
-        let mut transaction = self.conn.transaction()?;
+        let mut transaction = self.transaction()?;
         transaction.batch_execute(&up_sql)?;
         transaction.execute(LOG_UP_MIGRATION, &[&name, &hash, &down_sql])?;
         transaction.commit()?;
@@ -114,7 +122,7 @@ impl DbAdaptor for PostgresAdaptor {
             .as_ref()
             .ok_or_else(|| Error::BadMigration)?;
 
-        let mut transaction = self.conn.transaction()?;
+        let mut transaction = self.transaction()?;
         transaction.batch_execute(&down_sql)?;
         transaction.execute(LOG_DOWN_MIGRATION, &[&name])?;
         transaction.commit()?;

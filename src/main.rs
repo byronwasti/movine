@@ -1,39 +1,36 @@
 use log::debug;
-use movine::adaptor::{PostgresAdaptor, SqliteAdaptor};
-use movine::config::Config;
+use movine::config::{Config, DbAdaptorKind};
 use movine::errors::{Error, Result};
+use movine::DbAdaptor;
 use movine::Movine;
 use structopt::StructOpt;
 
 mod cli;
 use cli::Opt;
 
-fn main() {
+fn main() -> Result<()> {
     dotenv::dotenv().ok();
-    match run() {
-        Ok(_) => {}
-        Err(e) => {
-            eprintln!("Error: {}", e);
-            std::process::exit(1);
-        }
+    let config = Config::load(&"movine.toml")?;
+    let adaptor = config.into_db_adaptor()?;
+    match adaptor {
+        DbAdaptorKind::Postgres(mut conn) => run(&mut conn),
+        DbAdaptorKind::Sqlite(mut conn) => run(&mut conn),
     }
 }
 
-fn run() -> Result<()> {
+fn run<T: DbAdaptor>(adaptor: T) -> Result<()> {
+    let mut movine = Movine::new(adaptor);
     match Opt::from_args() {
         Opt::Init { debug } => {
             setup(debug);
-            let mut movine = initialize()?;
             movine.initialize()
         }
         Opt::Generate { name, debug } => {
             setup(debug);
-            let mut movine = initialize()?;
             movine.generate(&name)
         }
         Opt::Status { debug } => {
             setup(debug);
-            let mut movine = initialize()?;
             movine.status()
         }
         Opt::Up {
@@ -43,7 +40,6 @@ fn run() -> Result<()> {
             strict,
         } => {
             setup(debug);
-            let mut movine = initialize()?;
             movine
                 .set_number(number)
                 .set_strict(strict)
@@ -57,7 +53,6 @@ fn run() -> Result<()> {
             debug,
         } => {
             setup(debug);
-            let mut movine = initialize()?;
             movine
                 .set_number(number)
                 .set_show_plan(show_plan)
@@ -71,7 +66,6 @@ fn run() -> Result<()> {
             debug,
         } => {
             setup(debug);
-            let mut movine = initialize()?;
             movine
                 .set_number(number)
                 .set_ignore_divergent(ignore_divergent)
@@ -80,7 +74,6 @@ fn run() -> Result<()> {
         }
         Opt::Fix { show_plan, debug } => {
             setup(debug);
-            let mut movine = initialize()?;
             movine.set_show_plan(show_plan).fix()
         }
         _ => unimplemented!(),
@@ -95,34 +88,4 @@ fn setup(debug: bool) {
             log::LevelFilter::Info
         })
         .init()
-}
-
-fn initialize() -> Result<Movine> {
-    let config = Config::load(&"movine.toml")?;
-    debug!("Loaded config");
-    let adaptor = match config {
-        Config {
-            database_url: Some(url),
-            ..
-        } => {
-            if url.starts_with("postgres") {
-                PostgresAdaptor::from_url(&url)?
-            } else {
-                return Err(Error::AdaptorNotFound);
-            }
-        }
-        Config {
-            postgres: Some(params),
-            ..
-        } => PostgresAdaptor::from_params(&params)?,
-        Config {
-            sqlite: Some(params),
-            ..
-        } => SqliteAdaptor::from_params(&params)?,
-        _ => {
-            return Err(Error::AdaptorNotFound);
-        }
-    };
-
-    Ok(Movine::new(adaptor))
 }

@@ -4,14 +4,18 @@ use serde::Deserialize;
 use std::convert::TryInto;
 use std::fs::File;
 use std::io::Read;
+use std::fs;
+use native_tls::{Certificate, TlsConnector};
+use postgres_native_tls::MakeTlsConnector;
+use crate::DbAdaptor;
 
-mod postgres;
-mod sqlite;
+mod postgres_params;
+mod sqlite_params;
 
-pub use self::postgres::PostgresParams;
-use self::postgres::RawPostgresParams;
-use sqlite::RawSqliteParams;
-pub use sqlite::SqliteParams;
+pub use self::postgres_params::PostgresParams;
+use self::postgres_params::RawPostgresParams;
+use sqlite_params::RawSqliteParams;
+pub use sqlite_params::SqliteParams;
 
 #[derive(Debug)]
 pub struct Config {
@@ -27,22 +31,6 @@ impl Default for Config {
             sqlite: None,
             database_url: None,
         }
-    }
-}
-
-#[derive(Debug, Deserialize)]
-pub struct RawConfig {
-    pub postgres: Option<RawPostgresParams>,
-    pub sqlite: Option<RawSqliteParams>,
-}
-
-impl RawConfig {
-    pub fn load_file(file: &str) -> Result<RawConfig> {
-        let mut file = File::open(file)?;
-        let mut config = String::new();
-        file.read_to_string(&mut config)?;
-        let config = toml::from_str(&config)?;
-        Ok(config)
     }
 }
 
@@ -131,4 +119,76 @@ impl Config {
             },
         }
     }
+
+    pub fn into_db_adaptor(&self) -> Result<DbAdaptorKind> {
+        match self {
+            Config {
+                database_url: Some(url),
+                ..
+            } => {
+                if url.starts_with("postgres") {
+                    let conn = postgres::Client::connect(&url, postgres::NoTls)?;
+                    Ok(DbAdaptorKind::Postgres(conn))
+                } else {
+                    Err(Error::AdaptorNotFound)
+                }
+            }
+            Config {
+                postgres: Some(params),
+                ..
+            } => {
+                let url = format!(
+                    "postgresql://{user}:{password}@{host}:{port}/{database}",
+                    user = params.user,
+                    password = params.password,
+                    host = params.host,
+                    port = params.port,
+                    database = params.database,
+                );
+                let conn = if let Some(cert) = &params.sslcert {
+                    let cert = fs::read(cert)?;
+                    let cert = Certificate::from_pem(&cert)?;
+                    let connector = TlsConnector::builder().add_root_certificate(cert).build()?;
+                    let tls = MakeTlsConnector::new(connector);
+                    postgres::Client::connect(&url, tls)?
+                } else {
+                    postgres::Client::connect(&url, postgres::NoTls)?
+                };
+
+                Ok(DbAdaptorKind::Postgres(conn))
+            },
+            Config {
+                sqlite: Some(params),
+                ..
+            } => {
+                let conn = rusqlite::Connection::open(&params.file)?;
+                Ok(DbAdaptorKind::Sqlite(conn))
+            }
+            _ => {
+                Err(Error::AdaptorNotFound)
+            }
+        }
+    }
 }
+
+pub enum DbAdaptorKind {
+    Postgres(postgres::Client),
+    Sqlite(rusqlite::Connection),
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RawConfig {
+    pub postgres: Option<RawPostgresParams>,
+    pub sqlite: Option<RawSqliteParams>,
+}
+
+impl RawConfig {
+    pub fn load_file(file: &str) -> Result<RawConfig> {
+        let mut file = File::open(file)?;
+        let mut config = String::new();
+        file.read_to_string(&mut config)?;
+        let config = toml::from_str(&config)?;
+        Ok(config)
+    }
+}
+

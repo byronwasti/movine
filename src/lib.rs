@@ -15,8 +15,28 @@
 //!     /// Note: Normally you would catch the error, however due to the doc-test
 //!     /// nature of this example, there is no migration directory so this command
 //!     /// will fail.
-//!     //movine.fix()?;
-//!     movine.fix();
+//!     //movine.up()?;
+//!     movine.up();
+//!     Ok(())
+//! }
+//!
+//! ```
+//! Or if you want to provide your own connection
+//!
+//! ```
+//! use movine::{Movine, Config};
+//! use movine::adaptor::SqliteAdaptor;
+//! use movine::errors::Error;
+//!
+//! fn main() -> Result<(), Error> {
+//!     let conn = rusqlite::Connection::open(":memory:")?;
+//!     let mut movine = Movine::new(&mut conn);
+//!
+//!     /// Note: Normally you would catch the error, however due to the doc-test
+//!     /// nature of this example, there is no migration directory so this command
+//!     /// will fail.
+//!     //movine.up()?;
+//!     movine.up();
 //!     Ok(())
 //! }
 //!
@@ -35,15 +55,15 @@ mod match_maker;
 mod migration;
 mod plan_builder;
 
-use adaptor::DbAdaptor;
+pub use adaptor::DbAdaptor;
 pub use config::Config;
 use errors::{Error, Result};
 use file_handler::FileHandler;
 use migration::MigrationBuilder;
 use plan_builder::PlanBuilder;
 
-pub struct Movine {
-    adaptor: Box<dyn DbAdaptor>,
+pub struct Movine<T> {
+    adaptor: T,
     migration_dir: String,
     number: Option<usize>,
     show_plan: bool,
@@ -51,8 +71,8 @@ pub struct Movine {
     strict: bool,
 }
 
-impl Movine {
-    pub fn new(adaptor: Box<dyn DbAdaptor>) -> Self {
+impl<T: DbAdaptor> Movine<T> {
+    pub fn new(adaptor: T) -> Self {
         Self {
             adaptor,
             migration_dir: "./migrations".into(),
