@@ -16,6 +16,7 @@ pub struct PlanBuilder<'a> {
     count: Option<usize>,
     strict: bool,
     ignore_divergent: bool,
+    ignore_unreversable: bool,
 }
 
 impl<'a> PlanBuilder<'a> {
@@ -26,6 +27,7 @@ impl<'a> PlanBuilder<'a> {
             count: None,
             strict: false,
             ignore_divergent: false,
+            ignore_unreversable: false,
         }
     }
 
@@ -51,6 +53,11 @@ impl<'a> PlanBuilder<'a> {
 
     pub fn set_ignore_divergent(mut self, ignore: bool) -> Self {
         self.ignore_divergent = ignore;
+        self
+    }
+
+    pub fn set_ignore_unreversable(mut self, ignore: bool) -> Self {
+        self.ignore_unreversable = ignore;
         self
     }
 
@@ -108,7 +115,9 @@ impl<'a> PlanBuilder<'a> {
                     if m.is_reversable() {
                         plan.push((Step::Down, m.get_best_down_migration()));
                     } else {
-                        return Err(Error::UnrollbackableMigration);
+                        if !self.ignore_unreversable {
+                            return Err(Error::UnrollbackableMigration);
+                        }
                     }
                 }
                 _ => {}
@@ -196,7 +205,9 @@ impl<'a> PlanBuilder<'a> {
                         rollback_plan.push((Step::Down, m.get_best_down_migration()));
                         rollup_plan_rev.push((Step::Up, m.get_local_migration().unwrap()));
                     } else {
-                        return Err(Error::UnrollbackableMigration);
+                        if !self.ignore_unreversable {
+                            return Err(Error::UnrollbackableMigration);
+                        }
                     }
                 }
                 _ => {}

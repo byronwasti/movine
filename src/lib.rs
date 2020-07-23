@@ -4,19 +4,37 @@
 //! # Example
 //! ```
 //! use movine::{Movine, Config};
-//! use movine::adaptor::SqliteAdaptor;
 //! use movine::errors::Error;
 //!
 //! fn main() -> Result<(), Error> {
 //!     std::env::set_var("SQLITE_FILE", ":memory:");
 //!     let config = Config::load(&"movine.toml")?;
-//!     let adaptor = SqliteAdaptor::from_params(&config.sqlite.unwrap())?;
-//!     let mut movine = Movine::new(adaptor);
+//!     let mut conn = config.into_sqlite_conn()?;
+//!     let mut movine = Movine::new(&mut conn);
 //!     /// Note: Normally you would catch the error, however due to the doc-test
 //!     /// nature of this example, there is no migration directory so this command
 //!     /// will fail.
-//!     //movine.fix()?;
-//!     movine.fix();
+//!     //movine.up()?;
+//!     movine.up();
+//!     Ok(())
+//! }
+//!
+//! ```
+//! Or if you want to provide your own connection
+//!
+//! ```
+//! use movine::{Movine, Config};
+//! use movine::errors::Error;
+//!
+//! fn main() -> Result<(), Error> {
+//!     let mut conn = rusqlite::Connection::open(":memory:")?;
+//!     let mut movine = Movine::new(&mut conn);
+//!
+//!     /// Note: Normally you would catch the error, however due to the doc-test
+//!     /// nature of this example, there is no migration directory so this command
+//!     /// will fail.
+//!     //movine.up()?;
+//!     movine.up();
 //!     Ok(())
 //! }
 //!
@@ -35,30 +53,32 @@ mod match_maker;
 mod migration;
 mod plan_builder;
 
-use adaptor::DbAdaptor;
+pub use adaptor::DbAdaptor;
 pub use config::Config;
 use errors::{Error, Result};
 use file_handler::FileHandler;
 use migration::MigrationBuilder;
 use plan_builder::PlanBuilder;
 
-pub struct Movine {
-    adaptor: Box<dyn DbAdaptor>,
+pub struct Movine<T> {
+    adaptor: T,
     migration_dir: String,
     number: Option<usize>,
     show_plan: bool,
     ignore_divergent: bool,
+    ignore_unreversable: bool,
     strict: bool,
 }
 
-impl Movine {
-    pub fn new(adaptor: Box<dyn DbAdaptor>) -> Self {
+impl<T: DbAdaptor> Movine<T> {
+    pub fn new(adaptor: T) -> Self {
         Self {
             adaptor,
             migration_dir: "./migrations".into(),
             number: None,
             show_plan: false,
             ignore_divergent: false,
+            ignore_unreversable: false,
             strict: false,
         }
     }
@@ -80,6 +100,11 @@ impl Movine {
 
     pub fn set_ignore_divergent(&mut self, ignore_divergent: bool) -> &mut Self {
         self.ignore_divergent = ignore_divergent;
+        self
+    }
+
+    pub fn set_ignore_unreversable(&mut self, ignore_unreversable: bool) -> &mut Self {
+        self.ignore_unreversable = ignore_unreversable;
         self
     }
 
@@ -114,6 +139,7 @@ impl Movine {
         let plan = PlanBuilder::new()
             .local_migrations(&local_migrations)
             .db_migrations(&db_migrations)
+            .count(Some(1)) // Just want to run a single migration (the init one)
             .up()?;
         self.adaptor.run_migration_plan(&plan)
     }
@@ -171,6 +197,7 @@ impl Movine {
             .db_migrations(&db_migrations)
             .count(self.number)
             .set_ignore_divergent(self.ignore_divergent)
+            .set_ignore_unreversable(self.ignore_unreversable)
             .down()?;
 
         if self.show_plan {
@@ -209,6 +236,7 @@ impl Movine {
             .db_migrations(&db_migrations)
             .count(self.number)
             .set_ignore_divergent(self.ignore_divergent)
+            .set_ignore_unreversable(self.ignore_unreversable)
             .redo()?;
 
         if self.show_plan {

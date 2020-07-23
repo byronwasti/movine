@@ -1,65 +1,8 @@
 use crate::adaptor::DbAdaptor;
-use crate::config::PostgresParams;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
-use native_tls::{Certificate, TlsConnector};
-use postgres_native_tls::MakeTlsConnector;
-use std::fs;
 
-pub struct PostgresAdaptor {
-    conn: postgres::Client,
-}
-
-impl PostgresAdaptor {
-    #![allow(clippy::new_ret_no_self)]
-    pub fn new(
-        user: &str,
-        password: &str,
-        host: &str,
-        database: &str,
-        port: &str,
-        sslcert: Option<&str>,
-    ) -> Result<Box<dyn DbAdaptor>> {
-        let connection_params = format!(
-            "postgresql://{user}:{password}@{host}:{port}/{database}",
-            user = user,
-            password = password,
-            host = host,
-            port = port,
-            database = database,
-        );
-
-        if let Some(cert) = sslcert {
-            let cert = fs::read(cert)?;
-            let cert = Certificate::from_pem(&cert)?;
-            let connector = TlsConnector::builder().add_root_certificate(cert).build()?;
-            let tls = MakeTlsConnector::new(connector);
-            let conn = postgres::Client::connect(&connection_params, tls)?;
-            Ok(Box::new(Self { conn }))
-        } else {
-            let conn = postgres::Client::connect(&connection_params, postgres::NoTls)?;
-            Ok(Box::new(Self { conn }))
-        }
-    }
-
-    pub fn from_params(params: &PostgresParams) -> Result<Box<dyn DbAdaptor>> {
-        PostgresAdaptor::new(
-            &params.user,
-            &params.password,
-            &params.host,
-            &params.database,
-            &params.port.to_string(),
-            params.sslcert.as_deref(),
-        )
-    }
-
-    pub fn from_url(url: &str) -> Result<Box<dyn DbAdaptor>> {
-        let conn = postgres::Client::connect(&url, postgres::NoTls)?;
-        Ok(Box::new(Self { conn }))
-    }
-}
-
-impl DbAdaptor for PostgresAdaptor {
+impl DbAdaptor for &mut postgres::Client {
     fn init_up_sql(&self) -> &'static str {
         INIT_UP_SQL
     }
@@ -75,7 +18,7 @@ impl DbAdaptor for PostgresAdaptor {
             FROM movine_migrations
             ORDER BY created_at DESC;
         ";
-        let rows = self.conn.query(sql, &[])?;
+        let rows = self.query(sql, &[])?;
         for row in &rows {
             let name: String = row.get(0);
             let hash: String = row.get(1);
@@ -100,7 +43,7 @@ impl DbAdaptor for PostgresAdaptor {
         let empty_string = "".to_string();
         let down_sql = migration.down_sql.as_ref().unwrap_or_else(|| &empty_string);
 
-        let mut transaction = self.conn.transaction()?;
+        let mut transaction = self.transaction()?;
         transaction.batch_execute(&up_sql)?;
         transaction.execute(LOG_UP_MIGRATION, &[&name, &hash, &down_sql])?;
         transaction.commit()?;
@@ -114,7 +57,7 @@ impl DbAdaptor for PostgresAdaptor {
             .as_ref()
             .ok_or_else(|| Error::BadMigration)?;
 
-        let mut transaction = self.conn.transaction()?;
+        let mut transaction = self.transaction()?;
         transaction.batch_execute(&down_sql)?;
         transaction.execute(LOG_DOWN_MIGRATION, &[&name])?;
         transaction.commit()?;
