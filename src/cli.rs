@@ -46,6 +46,10 @@ pub enum Opt {
         /// Ignore any divergent migrations.
         ignore_divergent: bool,
 
+        #[structopt(short = "u", long = "ignore-unreversable")]
+        /// Ignore any unreversable migrations.
+        ignore_unreversable: bool,
+
         #[structopt(short = "v", long = "verbose")]
         /// Run with verbose logging
         debug: bool,
@@ -77,6 +81,10 @@ pub enum Opt {
         #[structopt(short = "i", long = "ignore-divergent")]
         /// Ignore any divergent migrations.
         ignore_divergent: bool,
+
+        #[structopt(short = "u", long = "ignore-unreversable")]
+        /// Ignore any unreversable migrations.
+        ignore_unreversable: bool,
 
         #[structopt(short = "v", long = "verbose")]
         /// Run with verbose logging

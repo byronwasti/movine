@@ -38,6 +38,7 @@ impl DbAdaptor for &mut Connection {
         }
         Ok(migrations)
     }
+
     fn run_up_migration(&mut self, migration: &Migration) -> Result<()> {
         let name = &migration.name;
         let hash = migration.hash.as_ref().ok_or_else(|| Error::BadMigration)?;

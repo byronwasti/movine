@@ -49,6 +49,7 @@ fn run<T: DbAdaptor>(adaptor: T) -> Result<()> {
             number,
             show_plan,
             ignore_divergent,
+            ignore_unreversable,
             debug,
         } => {
             setup(debug);
@@ -56,18 +57,21 @@ fn run<T: DbAdaptor>(adaptor: T) -> Result<()> {
                 .set_number(number)
                 .set_show_plan(show_plan)
                 .set_ignore_divergent(ignore_divergent)
+                .set_ignore_unreversable(ignore_unreversable)
                 .down()
         }
         Opt::Redo {
             number,
             show_plan,
             ignore_divergent,
+            ignore_unreversable,
             debug,
         } => {
             setup(debug);
             movine
                 .set_number(number)
                 .set_ignore_divergent(ignore_divergent)
+                .set_ignore_unreversable(ignore_unreversable)
                 .set_show_plan(show_plan)
                 .redo()
         }

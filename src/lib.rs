@@ -66,6 +66,7 @@ pub struct Movine<T> {
     number: Option<usize>,
     show_plan: bool,
     ignore_divergent: bool,
+    ignore_unreversable: bool,
     strict: bool,
 }
 
@@ -77,6 +78,7 @@ impl<T: DbAdaptor> Movine<T> {
             number: None,
             show_plan: false,
             ignore_divergent: false,
+            ignore_unreversable: false,
             strict: false,
         }
     }
@@ -98,6 +100,11 @@ impl<T: DbAdaptor> Movine<T> {
 
     pub fn set_ignore_divergent(&mut self, ignore_divergent: bool) -> &mut Self {
         self.ignore_divergent = ignore_divergent;
+        self
+    }
+
+    pub fn set_ignore_unreversable(&mut self, ignore_unreversable: bool) -> &mut Self {
+        self.ignore_unreversable = ignore_unreversable;
         self
     }
 
@@ -132,6 +139,7 @@ impl<T: DbAdaptor> Movine<T> {
         let plan = PlanBuilder::new()
             .local_migrations(&local_migrations)
             .db_migrations(&db_migrations)
+            .count(Some(1)) // Just want to run a single migration (the init one)
             .up()?;
         self.adaptor.run_migration_plan(&plan)
     }
@@ -189,6 +197,7 @@ impl<T: DbAdaptor> Movine<T> {
             .db_migrations(&db_migrations)
             .count(self.number)
             .set_ignore_divergent(self.ignore_divergent)
+            .set_ignore_unreversable(self.ignore_unreversable)
             .down()?;
 
         if self.show_plan {
@@ -227,6 +236,7 @@ impl<T: DbAdaptor> Movine<T> {
             .db_migrations(&db_migrations)
             .count(self.number)
             .set_ignore_divergent(self.ignore_divergent)
+            .set_ignore_unreversable(self.ignore_unreversable)
             .redo()?;
 
         if self.show_plan {

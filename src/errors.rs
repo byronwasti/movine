@@ -1,3 +1,5 @@
+use libsqlite3_sys::Error as SqliteLibError;
+use libsqlite3_sys::ErrorCode as SqliteLibErrorCode;
 use postgres::error::Error as PostgresError;
 use rusqlite::Error as SqliteError;
 use std::fmt;
@@ -6,7 +8,7 @@ use toml::de::Error as TomlError;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub enum Error {
     ConfigNotFound,
     PgParamError {
@@ -34,7 +36,7 @@ pub enum Error {
     NativeTlsError(native_tls::Error),
 }
 
-impl fmt::Display for Error {
+impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use Error::*;
         match self {
@@ -49,7 +51,15 @@ impl fmt::Display for Error {
             IoError(e) => write!(f, "IO Error: {}", e),
             TomlError(e) => write!(f, "Unable to read config file: {}", e),
             PgError(e) => write!(f, "Error in Postgres: {}", e),
-            SqliteError(e) => write!(f, "Error in Sqlite: {}", e),
+            SqliteError(e) => {
+                match e {
+                    rusqlite::Error::SqliteFailure(SqliteLibError { code: SqliteLibErrorCode::APIMisuse, .. }, _) => {
+                        write!(f, "Error in Sqlite: {}.", e)?;
+                        write!(f, "\nThis is likely due to an invalid SQL statement, such as an empty UP or DOWN migration.")
+                    }
+                    _ => write!(f, "Error in Sqlite: {}", e),
+                }
+            }
             Envy(e) => write!(f, "Error in loading environment variables: {}", e),
             NativeTlsError(e) => write!(f, "Error in TLS: {}", e),
             SqliteParamError { .. } => write!(f, "Unable to load Sqlite params. Make sure you have `file` defined in your `movine.toml` or SQLITE_FILE defined as an environment variable"),
