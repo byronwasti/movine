@@ -114,10 +114,8 @@ impl<'a> PlanBuilder<'a> {
                 Matching::Applied(_) | Matching::Variant(_, _) => {
                     if m.is_reversable() {
                         plan.push((Step::Down, m.get_best_down_migration()));
-                    } else {
-                        if !self.ignore_unreversable {
-                            return Err(Error::UnrollbackableMigration);
-                        }
+                    } else if !self.ignore_unreversable {
+                        return Err(Error::UnrollbackableMigration);
                     }
                 }
                 _ => {}
@@ -204,10 +202,8 @@ impl<'a> PlanBuilder<'a> {
                     if m.is_reversable() {
                         rollback_plan.push((Step::Down, m.get_best_down_migration()));
                         rollup_plan_rev.push((Step::Up, m.get_local_migration().unwrap()));
-                    } else {
-                        if !self.ignore_unreversable {
-                            return Err(Error::UnrollbackableMigration);
-                        }
+                    } else if !self.ignore_unreversable {
+                        return Err(Error::UnrollbackableMigration);
                     }
                 }
                 _ => {}
