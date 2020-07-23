@@ -1,35 +1,7 @@
 use crate::adaptor::DbAdaptor;
-use crate::config::SqliteParams;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use rusqlite::{params, Connection};
-
-/*
-pub struct SqliteAdaptor<'a> {
-    conn: &'a mut Connection,
-}
-
-impl<'a> SqliteAdaptor<'a> {
-    pub fn from_conn(conn: &'a mut Connection) -> Self {
-        Self {
-            conn,
-        }
-    }
-
-    /*
-    #![allow(clippy::new_ret_no_self)]
-    pub fn new(filename: &str) -> Result<Box<dyn DbAdaptor>> {
-        let conn = Connection::open(filename)?;
-        Ok(Box::new(Self { conn }))
-    }
-
-    pub fn from_params(params: &SqliteParams) -> Result<Box<dyn DbAdaptor>> {
-        let conn = Connection::open(&params.file)?;
-        Ok(Box::new(Self { conn }))
-    }
-    */
-}
-*/
 
 impl DbAdaptor for &mut Connection {
     fn init_up_sql(&self) -> &'static str {

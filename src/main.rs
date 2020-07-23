@@ -1,6 +1,5 @@
-use log::debug;
 use movine::config::{Config, DbAdaptorKind};
-use movine::errors::{Error, Result};
+use movine::errors::Result;
 use movine::DbAdaptor;
 use movine::Movine;
 use structopt::StructOpt;

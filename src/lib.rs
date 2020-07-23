@@ -4,14 +4,13 @@
 //! # Example
 //! ```
 //! use movine::{Movine, Config};
-//! use movine::adaptor::SqliteAdaptor;
 //! use movine::errors::Error;
 //!
 //! fn main() -> Result<(), Error> {
 //!     std::env::set_var("SQLITE_FILE", ":memory:");
 //!     let config = Config::load(&"movine.toml")?;
-//!     let adaptor = SqliteAdaptor::from_params(&config.sqlite.unwrap())?;
-//!     let mut movine = Movine::new(adaptor);
+//!     let mut conn = config.into_sqlite_conn()?;
+//!     let mut movine = Movine::new(&mut conn);
 //!     /// Note: Normally you would catch the error, however due to the doc-test
 //!     /// nature of this example, there is no migration directory so this command
 //!     /// will fail.
@@ -25,11 +24,10 @@
 //!
 //! ```
 //! use movine::{Movine, Config};
-//! use movine::adaptor::SqliteAdaptor;
 //! use movine::errors::Error;
 //!
 //! fn main() -> Result<(), Error> {
-//!     let conn = rusqlite::Connection::open(":memory:")?;
+//!     let mut conn = rusqlite::Connection::open(":memory:")?;
 //!     let mut movine = Movine::new(&mut conn);
 //!
 //!     /// Note: Normally you would catch the error, however due to the doc-test

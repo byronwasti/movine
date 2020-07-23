@@ -1,13 +1,12 @@
 use crate::errors::{Error, Result};
 use log::debug;
-use serde::Deserialize;
-use std::convert::TryInto;
-use std::fs::File;
-use std::io::Read;
-use std::fs;
 use native_tls::{Certificate, TlsConnector};
 use postgres_native_tls::MakeTlsConnector;
-use crate::DbAdaptor;
+use serde::Deserialize;
+use std::convert::TryInto;
+use std::fs;
+use std::fs::File;
+use std::io::Read;
 
 mod postgres_params;
 mod sqlite_params;
@@ -120,53 +119,67 @@ impl Config {
         }
     }
 
-    pub fn into_db_adaptor(&self) -> Result<DbAdaptorKind> {
-        match self {
-            Config {
-                database_url: Some(url),
-                ..
-            } => {
-                if url.starts_with("postgres") {
-                    let conn = postgres::Client::connect(&url, postgres::NoTls)?;
-                    Ok(DbAdaptorKind::Postgres(conn))
-                } else {
-                    Err(Error::AdaptorNotFound)
-                }
-            }
-            Config {
-                postgres: Some(params),
-                ..
-            } => {
-                let url = format!(
-                    "postgresql://{user}:{password}@{host}:{port}/{database}",
-                    user = params.user,
-                    password = params.password,
-                    host = params.host,
-                    port = params.port,
-                    database = params.database,
-                );
-                let conn = if let Some(cert) = &params.sslcert {
-                    let cert = fs::read(cert)?;
-                    let cert = Certificate::from_pem(&cert)?;
-                    let connector = TlsConnector::builder().add_root_certificate(cert).build()?;
-                    let tls = MakeTlsConnector::new(connector);
-                    postgres::Client::connect(&url, tls)?
-                } else {
-                    postgres::Client::connect(&url, postgres::NoTls)?
-                };
-
-                Ok(DbAdaptorKind::Postgres(conn))
-            },
-            Config {
-                sqlite: Some(params),
-                ..
-            } => {
-                let conn = rusqlite::Connection::open(&params.file)?;
-                Ok(DbAdaptorKind::Sqlite(conn))
-            }
-            _ => {
+    pub fn into_pg_conn_from_url(self) -> Result<postgres::Client> {
+        if let Some(ref url) = self.database_url {
+            if url.starts_with("postgres") {
+                let conn = postgres::Client::connect(&url, postgres::NoTls)?;
+                Ok(conn)
+            } else {
                 Err(Error::AdaptorNotFound)
             }
+        } else {
+            Err(Error::AdaptorNotFound)
+        }
+    }
+
+    pub fn into_pg_conn_from_config(self) -> Result<postgres::Client> {
+        if let Some(ref params) = self.postgres {
+            let url = format!(
+                "postgresql://{user}:{password}@{host}:{port}/{database}",
+                user = params.user,
+                password = params.password,
+                host = params.host,
+                port = params.port,
+                database = params.database,
+            );
+            let conn = if let Some(cert) = &params.sslcert {
+                let cert = fs::read(cert)?;
+                let cert = Certificate::from_pem(&cert)?;
+                let connector = TlsConnector::builder().add_root_certificate(cert).build()?;
+                let tls = MakeTlsConnector::new(connector);
+                postgres::Client::connect(&url, tls)?
+            } else {
+                postgres::Client::connect(&url, postgres::NoTls)?
+            };
+
+            Ok(conn)
+        } else {
+            Err(Error::AdaptorNotFound)
+        }
+    }
+
+    pub fn into_sqlite_conn(self) -> Result<rusqlite::Connection> {
+        if let Some(ref params) = self.sqlite {
+            let conn = rusqlite::Connection::open(&params.file)?;
+            Ok(conn)
+        } else {
+            Err(Error::AdaptorNotFound)
+        }
+    }
+
+    pub fn into_db_adaptor(self) -> Result<DbAdaptorKind> {
+        match self {
+            Config {
+                database_url: Some(_),
+                ..
+            } => Ok(DbAdaptorKind::Postgres(self.into_pg_conn_from_url()?)),
+            Config {
+                postgres: Some(_), ..
+            } => Ok(DbAdaptorKind::Postgres(self.into_pg_conn_from_config()?)),
+            Config {
+                sqlite: Some(_), ..
+            } => Ok(DbAdaptorKind::Sqlite(self.into_sqlite_conn()?)),
+            _ => Err(Error::AdaptorNotFound),
         }
     }
 }
@@ -191,4 +204,3 @@ impl RawConfig {
         Ok(config)
     }
 }
-
