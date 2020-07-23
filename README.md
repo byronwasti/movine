@@ -206,33 +206,32 @@ $ movine status
 The `custom` command will allow you to specify your own migration strategy (in case Movine is not smart enough). *Note: this is currently not implemented*
 
 ## Library Usage
-_Note: this API is in development. Please let me know your feedback!_
+*Note: While the `Movine` implementation is stable at this point, the `config` API may be in flux (specifically the helper functions). Please let me know any feedback!*
 
-Movine can be used as a library like so:
+Movine can be used as a library like so (using helper functions to load the database connection):
 ```rust
 use movine::{Movine, Config};
-use movine::adaptor::SqliteAdaptor;
 use movine::errors::Error;
 
 fn main() -> Result<(), Error> {
     let config = Config::load(&"movine.toml")?;
-    let adaptor = SqliteAdaptor::from_params(&config.sqlite.unwrap())?;
-    let mut movine = Movine::new(adaptor);
-    movine.fix()?;
+    let mut conn = config.into_sqlite_conn();
+    let mut movine = Movine::new(&mut conn);
+    movine.up()?;
     Ok(())
 }
 ```
 
-Or, if you want to provide the params without going through the config file:
+Or if you already have a connection:
 ```rust
 use movine::{Movine, Config};
-use movine::adaptor::SqliteAdaptor;
 use movine::errors::Error;
 
 fn main() -> Result<(), Error> {
-    let adaptor = SqliteAdaptor::new("file.db")?;
-    let mut movine = Movine::new(adaptor);
-    movine.fix()?;
+    // Same concept with a postgres connection!
+    let mut conn = rusqlite::Connection::open("file.db")?;
+    let mut movine = Movine::new(&mut conn);
+    movine.up()?;
     Ok(())
 }
 ```
