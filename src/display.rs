@@ -1,8 +1,10 @@
 use crate::match_maker::Matching;
 use crate::migration::Migration;
 use crate::plan_builder::Step;
+use ansi_term::Color;
 use std::io::{self, Write};
-use termion::color;
+
+const LIGHT_RED: u8 = 9;
 
 pub fn print_status(matchings: &[Matching]) {
     let stdout = io::stdout();
@@ -13,31 +15,22 @@ pub fn print_status(matchings: &[Matching]) {
         let reversable_str = if matching.is_reversable() {
             "".to_owned()
         } else {
-            format!(
-                "{color} [unreversable]{reset}",
-                color = color::Fg(color::Red),
-                reset = color::Fg(color::Reset),
-            )
+            Color::Red.paint(" [unreversable]").to_string()
+        };
+
+        let (color, status) = match matching {
+            // Add spaces in front to make them all the same length
+            Applied(_) => (Color::Green, "  Applied"),
+            Divergent(_) => (Color::Red, "Divergent"),
+            Pending(_) => (Color::Yellow, "  Pending"),
+            Variant(_, _) => (Color::Fixed(LIGHT_RED), "  Variant"),
         };
 
         writeln!(
             handle,
-            "{color}{status}{reset}{reversable} - {name}",
+            "{status}{reversable} - {name}",
             name = matching.get_name(),
-            status = match matching {
-                // Add spaces in front to make them all the same length
-                Applied(_) => "  Applied",
-                Divergent(_) => "Divergent",
-                Pending(_) => "  Pending",
-                Variant(_, _) => "  Variant",
-            },
-            color = match matching {
-                Applied(_) => color::Fg(color::Green).to_string(),
-                Pending(_) => color::Fg(color::Yellow).to_string(),
-                Divergent(_) => color::Fg(color::Red).to_string(),
-                Variant(_, _) => color::Fg(color::LightRed).to_string(),
-            },
-            reset = color::Fg(color::Reset),
+            status = color.paint(status),
             reversable = reversable_str,
         )
         .unwrap();
@@ -53,23 +46,22 @@ pub fn print_plan(plan: &[(Step, &Migration)]) {
 pub fn print_step((step, migration): &(Step, &Migration)) {
     use Step::*;
     if migration.is_reversable() || step == &Step::Up {
+        let step = match step {
+            // Add spaces in front to make them all the same length
+            Up => "  Up",
+            Down => "Down",
+        };
+
         println!(
-            "{color}{step}{reset} - {name}",
+            "{step} - {name}",
             name = migration.name,
-            step = match step {
-                // Add spaces in front to make them all the same length
-                Up => "  Up",
-                Down => "Down",
-            },
-            color = color::Fg(color::Green),
-            reset = color::Fg(color::Reset),
+            step = Color::Green.paint(step),
         );
     } else {
         println!(
-            "{color}Unreversable migration{reset} - {name}",
+            "{unreversable} - {name}",
             name = migration.name,
-            color = color::Fg(color::Red),
-            reset = color::Fg(color::Reset),
+            unreversable = Color::Red.paint("Unreversable migration"),
         );
     }
 }
