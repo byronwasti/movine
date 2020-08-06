@@ -149,7 +149,7 @@ impl Config {
                     host = params.host,
                     port = params.port,
                     database = params.database,
-                )
+                ),
             };
             let conn = if let Some(cert) = &params.sslcert {
                 let cert = fs::read(cert)?;
