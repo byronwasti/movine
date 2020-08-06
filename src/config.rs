@@ -134,14 +134,23 @@ impl Config {
 
     pub fn into_pg_conn_from_config(self) -> Result<postgres::Client> {
         if let Some(ref params) = self.postgres {
-            let url = format!(
-                "postgresql://{user}:{password}@{host}:{port}/{database}",
-                user = params.user,
-                password = params.password,
-                host = params.host,
-                port = params.port,
-                database = params.database,
-            );
+            let url = match params.password {
+                Some(ref password) => format!(
+                    "postgresql://{user}:{password}@{host}:{port}/{database}",
+                    user = params.user,
+                    password = password,
+                    host = params.host,
+                    port = params.port,
+                    database = params.database,
+                ),
+                None => format!(
+                    "postgresql://{user}@{host}:{port}/{database}",
+                    user = params.user,
+                    host = params.host,
+                    port = params.port,
+                    database = params.database,
+                ),
+            };
             let conn = if let Some(cert) = &params.sslcert {
                 let cert = fs::read(cert)?;
                 let cert = Certificate::from_pem(&cert)?;

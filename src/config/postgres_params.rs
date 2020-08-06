@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 #[derive(Debug, Clone)]
 pub struct PostgresParams {
     pub user: String,
-    pub password: String,
+    pub password: Option<String>,
     pub host: String,
     pub database: String,
     pub port: i32,
@@ -31,7 +31,7 @@ impl TryFrom<&[&RawPostgresParams]> for PostgresParams {
         match params {
             RawPostgresParams {
                 user: Some(user),
-                password: Some(password),
+                password,
                 database: Some(database),
                 host: Some(host),
                 port: Some(port),
