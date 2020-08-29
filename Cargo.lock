@@ -481,7 +481,7 @@ dependencies = [
 
 [[package]]
 name = "movine"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)",

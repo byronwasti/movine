@@ -50,7 +50,7 @@ impl DbAdaptor for &mut Connection {
         let down_sql = migration.down_sql.as_ref().unwrap_or_else(|| &empty_string);
 
         let transaction = self.transaction()?;
-        transaction.execute(&up_sql, params![])?;
+        transaction.execute_batch(&up_sql)?;
         transaction.execute(LOG_UP_MIGRATION, &[&name, &hash, &down_sql])?;
         transaction.commit()?;
         Ok(())
@@ -64,7 +64,7 @@ impl DbAdaptor for &mut Connection {
             .ok_or_else(|| Error::BadMigration)?;
 
         let transaction = self.transaction()?;
-        transaction.execute(&down_sql, params![])?;
+        transaction.execute_batch(&down_sql)?;
         transaction.execute(LOG_DOWN_MIGRATION, &[&name])?;
         transaction.commit()?;
         Ok(())
