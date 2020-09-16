@@ -3,7 +3,7 @@ use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 use rusqlite::{params, Connection};
 
-impl DbAdaptor for &mut Connection {
+impl DbAdaptor for Connection {
     fn init_up_sql(&self) -> &'static str {
         INIT_UP_SQL
     }

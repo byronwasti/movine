@@ -2,7 +2,7 @@ use crate::adaptor::DbAdaptor;
 use crate::errors::{Error, Result};
 use crate::migration::{Migration, MigrationBuilder};
 
-impl DbAdaptor for &mut postgres::Client {
+impl DbAdaptor for postgres::Client {
     fn init_up_sql(&self) -> &'static str {
         INIT_UP_SQL
     }
