@@ -30,3 +30,55 @@ pub trait DbAdaptor {
         Ok(())
     }
 }
+
+impl<T: DbAdaptor + ?Sized> DbAdaptor for &'_ mut T {
+    fn init_up_sql(&self) -> &'static str {
+        (**self).init_up_sql()
+    }
+
+    fn init_down_sql(&self) -> &'static str {
+        (**self).init_down_sql()
+    }
+
+    fn load_migrations(&mut self) -> Result<Vec<Migration>> {
+        (**self).load_migrations()
+    }
+
+    fn run_up_migration(&mut self, migration: &Migration) -> Result<()> {
+        (**self).run_up_migration(migration)
+    }
+
+    fn run_down_migration(&mut self, migration: &Migration) -> Result<()> {
+        (**self).run_down_migration(migration)
+    }
+
+    fn run_migration_plan(&mut self, plan: &[(Step, &Migration)]) -> Result<()> {
+        (**self).run_migration_plan(plan)
+    }
+}
+
+impl<T: DbAdaptor + ?Sized> DbAdaptor for Box<T> {
+    fn init_up_sql(&self) -> &'static str {
+        (**self).init_up_sql()
+    }
+
+    fn init_down_sql(&self) -> &'static str {
+        (**self).init_down_sql()
+    }
+
+    fn load_migrations(&mut self) -> Result<Vec<Migration>> {
+        (**self).load_migrations()
+    }
+
+    fn run_up_migration(&mut self, migration: &Migration) -> Result<()> {
+        (**self).run_up_migration(migration)
+    }
+
+    fn run_down_migration(&mut self, migration: &Migration) -> Result<()> {
+        (**self).run_down_migration(migration)
+    }
+
+    fn run_migration_plan(&mut self, plan: &[(Step, &Migration)]) -> Result<()> {
+        (**self).run_migration_plan(plan)
+    }
+}

@@ -1,4 +1,5 @@
 use crate::errors::{Error, Result};
+use crate::DbAdaptor;
 use log::debug;
 use native_tls::{Certificate, TlsConnector};
 use postgres_native_tls::MakeTlsConnector;
@@ -176,26 +177,21 @@ impl Config {
         }
     }
 
-    pub fn into_db_adaptor(self) -> Result<DbAdaptorKind> {
+    pub fn into_db_adaptor(self) -> Result<Box<dyn DbAdaptor>> {
         match self {
             Config {
                 database_url: Some(_),
                 ..
-            } => Ok(DbAdaptorKind::Postgres(self.into_pg_conn_from_url()?)),
+            } => Ok(Box::new(self.into_pg_conn_from_url()?)),
             Config {
                 postgres: Some(_), ..
-            } => Ok(DbAdaptorKind::Postgres(self.into_pg_conn_from_config()?)),
+            } => Ok(Box::new(self.into_pg_conn_from_config()?)),
             Config {
                 sqlite: Some(_), ..
-            } => Ok(DbAdaptorKind::Sqlite(self.into_sqlite_conn()?)),
+            } => Ok(Box::new(self.into_sqlite_conn()?)),
             _ => Err(Error::AdaptorNotFound),
         }
     }
-}
-
-pub enum DbAdaptorKind {
-    Postgres(postgres::Client),
-    Sqlite(rusqlite::Connection),
 }
 
 #[derive(Debug, Deserialize)]

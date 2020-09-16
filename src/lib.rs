@@ -6,16 +6,12 @@
 //! use movine::{Movine, Config};
 //! use movine::errors::Error;
 //!
-//! fn main() -> Result<(), Error> {
+//! fn test() -> Result<(), Error> {
 //!     std::env::set_var("SQLITE_FILE", ":memory:");
 //!     let config = Config::load(&"movine.toml")?;
 //!     let mut conn = config.into_sqlite_conn()?;
 //!     let mut movine = Movine::new(&mut conn);
-//!     /// Note: Normally you would catch the error, however due to the doc-test
-//!     /// nature of this example, there is no migration directory so this command
-//!     /// will fail.
-//!     //movine.up()?;
-//!     movine.up();
+//!     movine.up()?;
 //!     Ok(())
 //! }
 //!
@@ -26,15 +22,10 @@
 //! use movine::{Movine, Config};
 //! use movine::errors::Error;
 //!
-//! fn main() -> Result<(), Error> {
+//! fn test() -> Result<(), Error> {
 //!     let mut conn = rusqlite::Connection::open(":memory:")?;
 //!     let mut movine = Movine::new(&mut conn);
-//!
-//!     /// Note: Normally you would catch the error, however due to the doc-test
-//!     /// nature of this example, there is no migration directory so this command
-//!     /// will fail.
-//!     //movine.up()?;
-//!     movine.up();
+//!     movine.up()?;
 //!     Ok(())
 //! }
 //!
