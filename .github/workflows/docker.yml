@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Set output
         id: vars
-        run: echo ::set-output name=tag::${{ github.repository_owner }}/movine:${GITHUB_REF#refs/*/}
+        run: echo ::set-output name=tag::ghcr.io/${{ github.repository_owner }}/movine:${GITHUB_REF#refs/*/}
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -42,4 +42,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ghcr.io/ahanoff/movine:0.10.0-beta1
+          tags: ${{ steps.tags.outputs.tag }}
