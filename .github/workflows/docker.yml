@@ -42,4 +42,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ahanoff/movine:0.10.0-beta1
+          tags: ghcr.io/ahanoff/movine:0.10.0-beta1
