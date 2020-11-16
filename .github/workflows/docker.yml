@@ -42,4 +42,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.tags.outputs.tag }}
+          tags: ${{ steps.vars.outputs.tag }}
