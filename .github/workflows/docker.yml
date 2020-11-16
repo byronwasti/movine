@@ -42,4 +42,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.vars.outputs.tag }}
+          tags: ahanoff/movine:0.10.0-beta1
