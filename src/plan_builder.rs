@@ -304,10 +304,7 @@ mod tests {
             .set_strict(true)
             .up();
         assert!(plan.is_err());
-        let is_correct_error = match plan.err().unwrap() {
-            Error::DirtyMigrations => true,
-            _ => false,
-        };
+        let is_correct_error = matches!(plan.err().unwrap(), Error::DirtyMigrations);
         assert!(is_correct_error);
     }
 
@@ -463,10 +460,7 @@ mod tests {
             .count(Some(2))
             .redo();
         assert!(plan.is_err());
-        let is_correct_err = match plan.err().unwrap() {
-            Error::DivergentMigration => true,
-            _ => false,
-        };
+        let is_correct_err = matches!(plan.err().unwrap(), Error::DivergentMigration);
         assert!(is_correct_err);
     }
 
