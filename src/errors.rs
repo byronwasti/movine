@@ -33,7 +33,12 @@ pub enum Error {
     PgError(PostgresError),
     SqliteError(SqliteError),
     Envy(envy::Error),
+    #[cfg(feature = "with-native-tls")]
     NativeTlsError(native_tls::Error),
+    #[cfg(feature = "with-rustls")]
+    RustlsError(rustls::TLSError),
+    #[cfg(feature = "with-rustls")]
+    RustlsPemfileError,
 }
 
 impl fmt::Debug for Error {
@@ -61,7 +66,12 @@ impl fmt::Debug for Error {
                 }
             }
             Envy(e) => write!(f, "Error in loading environment variables: {}", e),
+            #[cfg(feature = "with-native-tls")]
             NativeTlsError(e) => write!(f, "Error in TLS: {}", e),
+            #[cfg(feature = "with-rustls")]
+            RustlsError(e) => write!(f, "Error in TLS: {}", e),
+            #[cfg(feature = "with-rustls")]
+            RustlsPemfileError => write!(f, "Error in TLS: could not add PEM file to store"),
             SqliteParamError { .. } => write!(f, "Unable to load Sqlite params. Make sure you have `file` defined in your `movine.toml` or SQLITE_FILE defined as an environment variable"),
             PgParamError {
                 user, password, database, host, port
@@ -103,8 +113,16 @@ impl From<envy::Error> for Error {
     }
 }
 
+#[cfg(feature = "with-native-tls")]
 impl From<native_tls::Error> for Error {
     fn from(error: native_tls::Error) -> Self {
         Error::NativeTlsError(error)
+    }
+}
+
+#[cfg(feature = "with-rustls")]
+impl From<rustls::TLSError> for Error {
+    fn from(error: rustls::TLSError) -> Self {
+        Error::RustlsError(error)
     }
 }
