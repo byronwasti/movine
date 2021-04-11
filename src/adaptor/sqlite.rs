@@ -41,13 +41,13 @@ impl DbAdaptor for Connection {
 
     fn run_up_migration(&mut self, migration: &Migration) -> Result<()> {
         let name = &migration.name;
-        let hash = migration.hash.as_ref().ok_or_else(|| Error::BadMigration)?;
+        let hash = migration.hash.as_ref().ok_or(Error::BadMigration)?;
         let up_sql = migration
             .up_sql
             .as_ref()
-            .ok_or_else(|| Error::BadMigration)?;
+            .ok_or(Error::BadMigration)?;
         let empty_string = "".to_string();
-        let down_sql = migration.down_sql.as_ref().unwrap_or_else(|| &empty_string);
+        let down_sql = migration.down_sql.as_ref().unwrap_or(&empty_string);
 
         let transaction = self.transaction()?;
         transaction.execute_batch(&up_sql)?;
@@ -61,7 +61,7 @@ impl DbAdaptor for Connection {
         let down_sql = migration
             .down_sql
             .as_ref()
-            .ok_or_else(|| Error::BadMigration)?;
+            .ok_or(Error::BadMigration)?;
 
         let transaction = self.transaction()?;
         transaction.execute_batch(&down_sql)?;

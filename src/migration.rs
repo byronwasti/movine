@@ -15,7 +15,7 @@ impl Migration {
     pub fn is_reversable(&self) -> bool {
         debug!("down_sql: {:?}", &self.down_sql);
         if let Some(sql) = &self.down_sql {
-            sql != ""
+            !sql.is_empty()
         } else {
             false
         }
@@ -53,7 +53,7 @@ impl MigrationBuilder {
         self
     }
 
-    pub fn date<'a>(&'a mut self, date: DateTime<Utc>) -> &'a mut Self {
+    pub fn date(&mut self, date: DateTime<Utc>) -> &mut Self {
         self.date = Some(date.to_owned());
         self
     }
