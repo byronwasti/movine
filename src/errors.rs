@@ -52,7 +52,7 @@ impl fmt::Debug for Error {
             MigrationDirNotFound => write!(f, "Could not find migration directory"),
             DirtyMigrations => write!(f, "More recent migrations exist in the database than the pending migrations. This is an error when run with --strict"),
             DivergentMigration => write!(f, "Divergent migration found. Run with --ignore-divergent to ignore divergent migrations."),
-            UnrollbackableMigration => write!(f, "Can't rollback one of the migrations in the list. Consider chaning your parameters or adding a `down.sql` migration."),
+            UnrollbackableMigration => write!(f, "Can't rollback one of the migrations in the list. Consider changing your parameters or adding a `down.sql` migration."),
             IoError(e) => write!(f, "IO Error: {}", e),
             TomlError(e) => write!(f, "Unable to read config file: {}", e),
             PgError(e) => write!(f, "Error in Postgres: {}", e),
