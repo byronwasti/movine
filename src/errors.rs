@@ -2,13 +2,13 @@ use libsqlite3_sys::Error as SqliteLibError;
 use libsqlite3_sys::ErrorCode as SqliteLibErrorCode;
 use postgres::error::Error as PostgresError;
 use rusqlite::Error as SqliteError;
+use std::error::Error as StdError;
 use std::fmt;
 use std::io;
 use toml::de::Error as TomlError;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-//#[derive(Debug)]
 pub enum Error {
     ConfigNotFound,
     PgParamError {
@@ -83,6 +83,12 @@ impl fmt::Debug for Error {
     }
 }
 
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 impl From<io::Error> for Error {
     fn from(error: io::Error) -> Self {
         Error::IoError(error)
@@ -126,3 +132,6 @@ impl From<rustls::TLSError> for Error {
         Error::RustlsError(error)
     }
 }
+
+// Implements std::Error for ease of use outside of Movine
+impl StdError for Error {}
