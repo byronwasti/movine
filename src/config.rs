@@ -159,7 +159,7 @@ impl Config {
                     database = params.database,
                 ),
             };
-            let conn = if let Some(cert) = &params.sslcert {
+            let conn = if let Some(cert) = &params.sslrootcert {
                 build_tls_connection(&url, cert)?
             } else {
                 postgres::Client::connect(&url, postgres::NoTls)?
