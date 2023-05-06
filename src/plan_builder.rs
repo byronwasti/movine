@@ -270,7 +270,7 @@ mod tests {
     #[test]
     /// Up should run pending migrations in-order.
     fn test_up_1() {
-        let local = [Migration::new(&"test_1"), Migration::new(&"test_2")];
+        let local = [Migration::new("test_1"), Migration::new("test_2")];
         let db = [];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
@@ -283,8 +283,8 @@ mod tests {
     #[test]
     /// Up should run pending migrations even if divergent migrations exist.
     fn test_up_2() {
-        let local = [Migration::new(&"test"), Migration::new(&"test_2")];
-        let db = [Migration::new(&"test"), Migration::new(&"test_3")];
+        let local = [Migration::new("test"), Migration::new("test_2")];
+        let db = [Migration::new("test"), Migration::new("test_3")];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
             .db_migrations(&db)
@@ -296,8 +296,8 @@ mod tests {
     #[test]
     /// Up should error with --strict if migrations are out-of-order.
     fn test_up_3() {
-        let local = [Migration::new(&"test"), Migration::new(&"test_2")];
-        let db = [Migration::new(&"test"), Migration::new(&"test_3")];
+        let local = [Migration::new("test"), Migration::new("test_2")];
+        let db = [Migration::new("test"), Migration::new("test_3")];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
             .db_migrations(&db)
@@ -311,8 +311,8 @@ mod tests {
     #[test]
     /// Down should rollback the most recent migration (divergent included by default)
     fn test_down_1() {
-        let local = [Migration::new(&"test"), Migration::new(&"test_2")];
-        let db = [Migration::new(&"test"), Migration::new(&"test_3")];
+        let local = [Migration::new("test"), Migration::new("test_2")];
+        let db = [Migration::new("test"), Migration::new("test_3")];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
             .db_migrations(&db)
@@ -324,8 +324,8 @@ mod tests {
     #[test]
     /// Down should rollback the most recent migration (ignoring divergent)
     fn test_down_2() {
-        let local = [Migration::new(&"test"), Migration::new(&"test_2")];
-        let db = [Migration::new(&"test"), Migration::new(&"test_3")];
+        let local = [Migration::new("test"), Migration::new("test_2")];
+        let db = [Migration::new("test"), Migration::new("test_3")];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
             .db_migrations(&db)
@@ -339,15 +339,15 @@ mod tests {
     /// Fix should rollback all variant and divergent migrations, and then run pending migrations.
     fn test_fix_1() {
         let local = [
-            Migration::new(&"test_0"),
-            Migration::new(&"test_1"),
-            Migration::new(&"test_2"),
+            Migration::new("test_0"),
+            Migration::new("test_1"),
+            Migration::new("test_2"),
         ];
         let db = [
-            Migration::new(&"test_0"),
-            Migration::new_with_hash(&"test_1", &"hash"),
-            Migration::new_with_hash(&"test_2", &"hash"),
-            Migration::new(&"test_3"),
+            Migration::new("test_0"),
+            Migration::new_with_hash("test_1", "hash"),
+            Migration::new_with_hash("test_2", "hash"),
+            Migration::new("test_3"),
         ];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
@@ -370,14 +370,14 @@ mod tests {
     /// Fix should rollback applied migrations if they are ahead of variant migrations.
     fn test_fix_2() {
         let local = [
-            Migration::new(&"test"),
-            Migration::new(&"test_1"),
-            Migration::new(&"test_2"),
+            Migration::new("test"),
+            Migration::new("test_1"),
+            Migration::new("test_2"),
         ];
         let db = [
-            Migration::new(&"test"),
-            Migration::new_with_hash(&"test_1", &"hash"),
-            Migration::new(&"test_2"),
+            Migration::new("test"),
+            Migration::new_with_hash("test_1", "hash"),
+            Migration::new("test_2"),
         ];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
@@ -400,18 +400,18 @@ mod tests {
     /// of applied/variant/diverget migration orders.
     fn test_fix_3() {
         let local = [
-            Migration::new(&"test_0"),
-            Migration::new(&"test_1"),
-            Migration::new(&"test_2"),
-            Migration::new(&"test_3"),
-            Migration::new(&"test_4"),
+            Migration::new("test_0"),
+            Migration::new("test_1"),
+            Migration::new("test_2"),
+            Migration::new("test_3"),
+            Migration::new("test_4"),
         ];
         let db = [
-            Migration::new(&"test_0"),
-            Migration::new_with_hash(&"test_1", &"hash"),
-            Migration::new(&"test_2"),
-            Migration::new(&"test_3b"),
-            Migration::new(&"test_4"),
+            Migration::new("test_0"),
+            Migration::new_with_hash("test_1", "hash"),
+            Migration::new("test_2"),
+            Migration::new("test_3b"),
+            Migration::new("test_4"),
         ];
         let actual = PlanBuilder::new()
             .local_migrations(&local)
@@ -434,8 +434,8 @@ mod tests {
     #[test]
     /// Fix should run pending migrations without problems.
     fn test_fix_4() {
-        let local = [Migration::new(&"test_0"), Migration::new(&"test_1")];
-        let db = [Migration::new(&"test_0")];
+        let local = [Migration::new("test_0"), Migration::new("test_1")];
+        let db = [Migration::new("test_0")];
         let actual = PlanBuilder::new()
             .local_migrations(&local)
             .db_migrations(&db)
@@ -448,11 +448,11 @@ mod tests {
     #[test]
     /// Redo should fail if there is a divergent migration (and we are not ignoring them)
     fn test_redo_1() {
-        let local = [Migration::new(&"test"), Migration::new(&"test_2")];
+        let local = [Migration::new("test"), Migration::new("test_2")];
         let db = [
-            Migration::new(&"test"),
-            Migration::new_with_hash(&"test_2", &"hash_1"),
-            Migration::new(&"test_3"),
+            Migration::new("test"),
+            Migration::new_with_hash("test_2", "hash_1"),
+            Migration::new("test_3"),
         ];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
@@ -468,15 +468,15 @@ mod tests {
     /// Redo should properly ignore divergent migrations
     fn test_redo_2() {
         let local = [
-            Migration::new(&"test_0"),
-            Migration::new(&"test_1"),
-            Migration::new(&"test_2"),
+            Migration::new("test_0"),
+            Migration::new("test_1"),
+            Migration::new("test_2"),
         ];
         let db = [
-            Migration::new(&"test_0"),
-            Migration::new(&"test_1"),
-            Migration::new(&"test_2"),
-            Migration::new(&"test_3"),
+            Migration::new("test_0"),
+            Migration::new("test_1"),
+            Migration::new("test_2"),
+            Migration::new("test_3"),
         ];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
@@ -500,14 +500,14 @@ mod tests {
     /// Redo should not care about variant migrations further than what we are redo'ing
     fn test_redo_3() {
         let local = [
-            Migration::new(&"test_0"),
-            Migration::new(&"test_1"),
-            Migration::new(&"test_2"),
+            Migration::new("test_0"),
+            Migration::new("test_1"),
+            Migration::new("test_2"),
         ];
         let db = [
-            Migration::new(&"test_0"),
-            Migration::new_with_hash(&"test_1", &"hash_1"),
-            Migration::new(&"test_2"),
+            Migration::new("test_0"),
+            Migration::new_with_hash("test_1", "hash_1"),
+            Migration::new("test_2"),
         ];
         let plan = PlanBuilder::new()
             .local_migrations(&local)
@@ -522,14 +522,14 @@ mod tests {
     /// Redo should properly rollback variant migrations
     fn test_redo_4() {
         let local = [
-            Migration::new(&"test_0"),
-            Migration::new(&"test_1"),
-            Migration::new(&"test_2"),
+            Migration::new("test_0"),
+            Migration::new("test_1"),
+            Migration::new("test_2"),
         ];
         let db = [
-            Migration::new(&"test_0"),
-            Migration::new_with_hash(&"test_1", &"hash_1"),
-            Migration::new(&"test_2"),
+            Migration::new("test_0"),
+            Migration::new_with_hash("test_1", "hash_1"),
+            Migration::new("test_2"),
         ];
         let plan = PlanBuilder::new()
             .local_migrations(&local)

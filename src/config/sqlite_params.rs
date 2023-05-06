@@ -25,7 +25,7 @@ impl TryFrom<&[&RawSqliteParams]> for SqliteParams {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct RawSqliteParams {
     pub file: Option<String>,
 }
@@ -38,11 +38,5 @@ impl RawSqliteParams {
 
     pub fn is_any(&self) -> bool {
         self.file.is_some()
-    }
-}
-
-impl Default for RawSqliteParams {
-    fn default() -> Self {
-        Self { file: None }
     }
 }

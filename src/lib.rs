@@ -111,10 +111,10 @@ impl<T: DbAdaptor> Movine<T> {
         let down_sql = self.adaptor.init_down_sql();
 
         let init_migration = MigrationBuilder::new()
-            .name(&"movine_init")
+            .name("movine_init")
             .date(Utc.timestamp_opt(0, 0).unwrap())
-            .up_sql(&up_sql)
-            .down_sql(&down_sql)
+            .up_sql(up_sql)
+            .down_sql(down_sql)
             .build()?;
 
         match file_handler.write_migration(&init_migration) {

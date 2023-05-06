@@ -84,12 +84,12 @@ impl Ord for Matching<'_> {
     fn cmp(&self, other: &Self) -> Ordering {
         let self_name = self.get_name();
         let other_name = other.get_name();
-        self_name.cmp(&other_name)
+        self_name.cmp(other_name)
     }
 }
 
 impl PartialOrd for Matching<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }

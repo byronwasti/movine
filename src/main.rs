@@ -82,7 +82,7 @@ fn setup(debug: bool) -> Result<Movine<Box<dyn DbAdaptor>>> {
         })
         .init();
 
-    let config = Config::load(&"movine.toml")?;
+    let config = Config::load("movine.toml")?;
     let adaptor = config.into_db_adaptor()?;
     let movine = Movine::new(adaptor);
     Ok(movine)

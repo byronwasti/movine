@@ -24,21 +24,11 @@ use self::postgres_params::RawPostgresParams;
 use sqlite_params::RawSqliteParams;
 pub use sqlite_params::SqliteParams;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Config {
     pub postgres: Option<PostgresParams>,
     pub sqlite: Option<SqliteParams>,
     pub database_url: Option<String>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            postgres: None,
-            sqlite: None,
-            database_url: None,
-        }
-    }
 }
 
 impl Config {
@@ -130,7 +120,7 @@ impl Config {
     pub fn into_pg_conn_from_url(self) -> Result<postgres::Client> {
         if let Some(ref url) = self.database_url {
             if url.starts_with("postgres") {
-                let conn = postgres::Client::connect(&url, postgres::NoTls)?;
+                let conn = postgres::Client::connect(url, postgres::NoTls)?;
                 Ok(conn)
             } else {
                 Err(Error::AdaptorNotFound)
@@ -219,7 +209,7 @@ fn build_tls_connection(url: &str, certificate: &str) -> Result<postgres::Client
     let cert = Certificate::from_pem(&cert)?;
     let connector = TlsConnector::builder().add_root_certificate(cert).build()?;
     let tls = MakeTlsConnector::new(connector);
-    Ok(postgres::Client::connect(&url, tls)?)
+    Ok(postgres::Client::connect(url, tls)?)
 }
 
 #[cfg(feature = "with-rustls")]

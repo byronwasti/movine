@@ -41,7 +41,7 @@ impl DbAdaptor for postgres::Client {
         let down_sql = migration.down_sql.as_ref().unwrap_or(&empty_string);
 
         let mut transaction = self.transaction()?;
-        transaction.batch_execute(&up_sql)?;
+        transaction.batch_execute(up_sql)?;
         transaction.execute(LOG_UP_MIGRATION, &[&name, &hash, &down_sql])?;
         transaction.commit()?;
         Ok(())
@@ -52,7 +52,7 @@ impl DbAdaptor for postgres::Client {
         let down_sql = migration.down_sql.as_ref().ok_or(Error::BadMigration)?;
 
         let mut transaction = self.transaction()?;
-        transaction.batch_execute(&down_sql)?;
+        transaction.batch_execute(down_sql)?;
         transaction.execute(LOG_DOWN_MIGRATION, &[&name])?;
         transaction.commit()?;
         Ok(())

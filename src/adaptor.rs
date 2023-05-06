@@ -18,11 +18,11 @@ pub trait DbAdaptor {
             display::print_step(&(*step, migration));
             match step {
                 Step::Up => {
-                    self.run_up_migration(&migration)?;
+                    self.run_up_migration(migration)?;
                 }
                 Step::Down => {
                     if migration.is_reversable() {
-                        self.run_down_migration(&migration)?;
+                        self.run_down_migration(migration)?;
                     }
                 }
             }
