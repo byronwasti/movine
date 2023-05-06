@@ -40,7 +40,7 @@ database = {db}
 user = {username}
 password = {pass}
 port = {port}
-sslcert = {cert filename}
+sslrootcert = {cert filename}
 
 ## Or use the Sqlite adaptor
 [sqlite]
@@ -50,18 +50,18 @@ file={file}
 database_url={url_string}
 ```
 
-*Note: SSLCert currently does not work when supplying a database_url.*
+*Note: SSLRootCert currently does not work when supplying a database_url.*
 *Note: You should only specify connection details for one database type, or Movine will implicitly choose one*
 
 ### Environment variables
 
-You can configure the PostgreSQL adaptor using the environment variables described in the [PostgreSQL documentation](https://www.postgresql.org/docs/current/libpq-envars.html). Specifically `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD` and `PGSSLCERT` are supported.
+You can configure the PostgreSQL adaptor using the environment variables described in the [PostgreSQL documentation](https://www.postgresql.org/docs/current/libpq-envars.html). Specifically `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD` and `PGSSLROOTCERT` are supported.
 
 You can configure the SQLite adaptor using an `SQLITE_FILE` environment variable.
 
 Finally, you can also supply a `DATABASE_URL` environment variable.
 
-*Note: SSLCert does not work when using a database URL.*
+*Note: SSLRootCert does not work when using a database URL.*
 
 Movine supports [`.env`](https://github.com/dotenv-rs/dotenv#usage) files as a source of configuration.
 
