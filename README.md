@@ -1,3 +1,5 @@
+*NOTE: This project is no longer actively maintained. It was originally a Proof-of-concept and I never got around to properly fixing it up, and don't plan to. Feel free to use at your own risk, and I'll still take a look every now and then to merge fixes.*
+
 # Movine
 ![Linux build status](https://github.com/byronwasti/movine/workflows/CI/badge.svg)
 [![Crates.io](https://img.shields.io/crates/v/movine.svg)](https://crates.io/crates/movine)
